@@ -42,7 +42,7 @@ realtimectl logs
 redisctl status
 ```
 
-Redis and realtime are intended to stay running for local integration now. This does not deploy the PixelPlaza backend. Restarting the Redis HTTPS gateway to load its new token briefly affects other Redis REST clients; Redis data itself is preserved.
+Redis and realtime remain shared VM services. The PixelPlaza backend now runs on the VM at `https://pixelplaza-api.chrbuilds.dev`; this is separate from running the backend locally with `npm run dev:backend`. Restarting the Redis HTTPS gateway to load its token briefly affects other Redis REST clients; Redis data itself is preserved.
 
 `npm run check:services` checks actual Redis read/write, blocked access to SchedSnap data/admin commands, token issuance, WebSocket connection, unauthorized subscription rejection, and event delivery. Its key expires in 60 seconds and is also deleted after the check. No lobby or chat history is created.
 
