@@ -1,0 +1,22 @@
+{
+  "bytes": {
+    "bench.webp": 3958,
+    "characters-garden.webp": 62280,
+    "characters-haunted.webp": 61096,
+    "cloud-garden.webp": 27328,
+    "cloud-haunted.webp": 47758,
+    "garden-cat-walk.webp": 149640,
+    "garden-mushroom-walk.webp": 142068,
+    "garden-robot-walk.webp": 112706,
+    "garden-sprout-walk.webp": 127808,
+    "haunted-cat-walk.webp": 143218,
+    "haunted-mushroom-walk.webp": 117218,
+    "haunted-robot-walk.webp": 132260,
+    "haunted-sprout-walk.webp": 123144,
+    "plaza-garden.webp": 200778,
+    "plaza-haunted.webp": 210670,
+    "scenery-garden.webp": 152076,
+    "scenery-haunted.webp": 189538
+  },
+  "total": 2003544
+}

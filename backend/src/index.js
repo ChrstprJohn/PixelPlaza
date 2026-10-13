@@ -1,10 +1,10 @@
 import { createBackend } from './server.js';
 import { createServices } from './services.js';
-import { createLobby } from './lobby.js';
+import { createPlazas } from './plazas.js';
 
 const port = Number(process.env.PORT || 3001);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid PORT');
-const lobby = createLobby({ services: createServices(), limit: Number(process.env.LOBBY_PLAYER_LIMIT || 10), websocketUrl: process.env.REALTIME_WEBSOCKET_URL });
+const lobby = createPlazas({ services: createServices(), limit: Number(process.env.LOBBY_PLAYER_LIMIT || 10), websocketUrl: process.env.REALTIME_WEBSOCKET_URL });
 const origins = (process.env.FRONTEND_ORIGIN || 'http://localhost:5173').split(',');
 for (const origin of [...origins]) {
   const url = new URL(origin);

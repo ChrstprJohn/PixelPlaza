@@ -1,10 +1,10 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { WORLD, CHARACTERS, movePosition } from '../../shared/world.js';
+import { WORLD, CHARACTERS, movePosition, facingDirection, walkable } from '../../shared/world.js';
 
 const rateScript = `local n=redis.call('INCR',KEYS[1]); if n==1 then redis.call('EXPIRE',KEYS[1],ARGV[1]) end; return n`;
 const chatScript = `redis.call('LPUSH',KEYS[1],ARGV[1]); redis.call('LTRIM',KEYS[1],0,59); redis.call('EXPIRE',KEYS[1],900); return 1`;
 export class ApiError extends Error { constructor(status, message) { super(message); this.status = status; } }
-export function createLobby({ services, limit = 10, now = Date.now, websocketUrl, autoStart = true }) {
+export function createLobby({ services, limit = 10, now = Date.now, websocketUrl, autoStart = true, lobbyId = 'garden' }) {
   if (!Number.isInteger(limit) || limit < 1 || limit > 10) throw new Error('Player limit must be 1-10');
   const instance = randomBytes(8).toString('hex');
   const channel = `pixelplaza/lobby/${instance}`;
@@ -14,8 +14,8 @@ export function createLobby({ services, limit = 10, now = Date.now, websocketUrl
   let lastSnapshot = 0, budgetMinute = -1, budgetCount = 0;
   const hash = text => createHash('sha256').update(text).digest('hex');
   const redis = async command => { try { return await services.redis(command); } catch { throw new ApiError(503, 'Storage is unavailable. Please try again.'); } };
-  const visible = () => [...players.values()].filter(p => p.ready).map(p => ({ id: p.id, name: p.name, character: p.character, x: Math.round(p.x), y: Math.round(p.y), facing: p.facing, moving: now() - p.inputAt < 300 && Boolean(p.dx || p.dy) }));
-  const state = () => ({ instance, revision, players: visible(), limit, channel, world: WORLD, realtimeDelayed: delayed });
+  const visible = () => [...players.values()].filter(p => p.ready).map(p => ({ id: p.id, name: p.name, character: p.character, x: Math.round(p.x), y: Math.round(p.y), facing: p.facing, inputSequence: p.sequence, moving: now() - p.inputAt < 300 && Boolean(p.dx || p.dy) }));
+  const state = () => ({ lobbyId, instance, revision, players: visible(), limit, channel, world: WORLD, realtimeDelayed: delayed });
   const touch = () => { revision++; dirty = true; };
   async function rate(key, seconds, max) {
     const count = await redis(['EVAL', rateScript, '1', `${prefix}:rate:${key}`, String(seconds)]);
@@ -54,7 +54,7 @@ export function createLobby({ services, limit = 10, now = Date.now, websocketUrl
       if (player.ready && time - player.seen > 45000) { void remove(player); continue; }
       if (!player.ready || time - player.inputAt > 300 || time - player.verified > 30000) continue;
       const beforeX = player.x, beforeY = player.y;
-      movePosition(player, player.dx, player.dy, dt);
+      movePosition(player, player.dx, player.dy, dt, lobbyId);
       if (beforeX !== player.x || beforeY !== player.y) touch();
     }
   }
@@ -77,6 +77,11 @@ export function createLobby({ services, limit = 10, now = Date.now, websocketUrl
   for (const timer of timers) timer.unref();
   return {
     state, advance, flush, channel,
+    owns: token => typeof token === 'string' && players.has(hash(token)),
+    availability() {
+      advance();
+      return { players: players.size, limit, full: players.size >= limit };
+    },
     async join({ name, character }, ip) {
       if (closed) throw new ApiError(503, 'The plaza is restarting.');
       name = typeof name === 'string' ? name.trim().replace(/\s+/g, ' ') : '';
@@ -86,9 +91,9 @@ export function createLobby({ services, limit = 10, now = Date.now, websocketUrl
       if (players.size >= limit) throw new ApiError(409, 'The plaza is full. Please try again when someone leaves.');
       const token = randomBytes(32).toString('hex'), digest = hash(token);
       const slot = players.size;
-      const spawnPoints = [[330,265],[420,265],[510,265],[600,265],[690,265],[330,470],[420,540],[510,550],[600,540],[780,520]];
+      const spawnPoints = [[330,285],[420,265],[510,220],[600,265],[690,300],[330,470],[420,540],[510,550],[600,540],[780,520]];
       const occupied = [...players.values()];
-      const [x, y] = spawnPoints.find(([sx, sy]) => occupied.every(p => Math.hypot(p.x - sx, p.y - sy) > 55)) || spawnPoints[slot];
+      const [x, y] = spawnPoints.find(([sx, sy]) => walkable(sx, sy, lobbyId, character) && occupied.every(p => Math.hypot(p.x - sx, p.y - sy) > 55)) || spawnPoints.find(([sx, sy]) => walkable(sx, sy, lobbyId, character));
       const player = { id: randomUUID(), hash: digest, key: `${prefix}:session:${digest}`, name, character, x, y, facing: 'down', dx: 0, dy: 0, inputAt: 0, sequence: -1, seen: now(), verified: now(), ready: false };
       players.set(digest, player);
       try {
@@ -115,10 +120,10 @@ export function createLobby({ services, limit = 10, now = Date.now, websocketUrl
       const player = await auth(token);
       if (![-1, 0, 1].includes(input.dx) || ![-1, 0, 1].includes(input.dy) || !Number.isSafeInteger(input.sequence) || input.sequence < 0) throw new ApiError(400, 'Invalid movement input.');
       if (input.sequence <= player.sequence) return { ok: true };
-      if (now() - player.inputAt < 65) throw new ApiError(429, 'Movement updates are too frequent.');
+      const stopping = !input.dx && !input.dy && Boolean(player.dx || player.dy);
+      if (!stopping && now() - player.inputAt < 65) throw new ApiError(429, 'Movement updates are too frequent.');
       player.sequence = input.sequence; player.dx = input.dx; player.dy = input.dy; player.inputAt = now(); player.seen = now();
-      if (input.dx) player.facing = input.dx < 0 ? 'left' : 'right';
-      else if (input.dy) player.facing = input.dy < 0 ? 'up' : 'down';
+      if (input.dx || input.dy) player.facing = facingDirection(input.dx, input.dy);
       touch(); return { ok: true };
     },
     async chat(token, { text }) {

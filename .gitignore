@@ -26,3 +26,7 @@ compose.vm.yaml
 *.tsbuildinfo
 Thumbs.db
 Desktop.ini
+art/qa/
+art/garden-props/
+art/*doctor*.json
+frontend/animation-check.html

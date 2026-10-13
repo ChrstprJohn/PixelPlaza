@@ -22,6 +22,7 @@ export function createBackend({ lobby, origins = ['http://localhost:5173', 'http
     if (!lobby) return send(404, { error: 'Not found' });
     const token = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.authorization || '')?.[1];
     try {
+      if (request.method === 'GET' && request.url === '/api/lobbies') return send(200, { lobbies: lobby.list() });
       if (request.method === 'GET' && request.url === '/api/lobby') return send(200, await lobby.read(token));
       const routes = ['/api/join', '/api/move', '/api/chat', '/api/heartbeat', '/api/token', '/api/leave'];
       if (request.method !== 'POST' || !routes.includes(request.url)) return send(404, { error: 'Not found' });

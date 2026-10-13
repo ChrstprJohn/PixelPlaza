@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createLobby } from '../src/lobby.js';
+import { createPlazas } from '../src/plazas.js';
 import { walkable, WORLD } from '../../shared/world.js';
 
 function fixture() {
@@ -26,8 +27,29 @@ function fixture() {
   };
   const services = { redis, token: async () => ({ token: 'signed-test-token' }), publish: async (channel, event) => events.push({ channel, event }) };
   const lobby = createLobby({ services, now: () => time, websocketUrl: 'wss://example.com', autoStart: false });
-  return { lobby, records, events, addTime: delta => { time += delta; }, failStorage: value => { unavailable = value; } };
+  return { lobby, services, records, events, addTime: delta => { time += delta; }, failStorage: value => { unavailable = value; } };
 }
+
+test('lobby picker reports independent capacity, isolates players and chat, and releases full slots', async () => {
+  const f = fixture();
+  const plazas = createPlazas({ services: f.services, limit: 1, autoStart: false, websocketUrl: 'wss://example.com' });
+  try {
+    assert.deepEqual(plazas.list().map(room => [room.id, room.players, room.full]), [['garden', 0, false], ['haunted', 0, false]]);
+    const garden = await plazas.join({ name: 'Garden guest', character: 'cat', lobbyId: 'garden' }, 'local');
+    const haunted = await plazas.join({ name: 'Ghost guest', character: 'robot', lobbyId: 'haunted' }, 'local');
+    assert.notEqual(garden.channel, haunted.channel);
+    assert.deepEqual(plazas.list().map(room => [room.players, room.full]), [[1, true], [1, true]]);
+    await assert.rejects(plazas.join({ name: 'Extra guest', character: 'cat', lobbyId: 'haunted' }, 'local'), error => error.status === 409);
+    await assert.rejects(plazas.join({ name: 'Guest', character: 'cat', lobbyId: 'unknown' }, 'local'), error => error.status === 400);
+    await plazas.chat(garden.sessionToken, { text: 'Garden only' });
+    assert.equal((await plazas.read(garden.sessionToken)).messages[0].text, 'Garden only');
+    assert.deepEqual((await plazas.read(haunted.sessionToken)).messages, []);
+    assert.equal((await plazas.read(haunted.sessionToken)).players[0].name, 'Ghost guest');
+    await plazas.leave(garden.sessionToken);
+    assert.equal(plazas.list()[0].full, false);
+    await assert.rejects(async () => plazas.read(garden.sessionToken), error => error.status === 401);
+  } finally { await plazas.close(); await f.lobby.close(); }
+});
 
 test('ten concurrent guests fit, eleventh rejected, invalid/forged sessions rejected, leave releases slot', async () => {
   const f = fixture();
@@ -66,6 +88,23 @@ test('server controls speed, normalizes diagonal movement, refuses forged moveme
   const stopped = f.lobby.state().players[0];
   f.addTime(100); f.lobby.advance();
   assert.equal(f.lobby.state().players[0].x, stopped.x);
+  await f.lobby.close();
+});
+
+test('releasing movement stops immediately even inside the input rate limit and late inputs cannot restart it', async () => {
+  const f = fixture(), guest = await f.lobby.join({ name: 'Walker', character: 'cat' }, 'local');
+  await f.lobby.move(guest.sessionToken, { dx: 1, dy: 0, sequence: 1 });
+  f.addTime(10);
+  await f.lobby.move(guest.sessionToken, { dx: 0, dy: 0, sequence: 2 });
+  const stopped = f.lobby.state().players[0];
+  assert.equal(stopped.moving, false);
+  assert.equal(stopped.inputSequence, 2);
+  await f.lobby.move(guest.sessionToken, { dx: 1, dy: 0, sequence: 1 });
+  f.addTime(100); f.lobby.advance();
+  const after = f.lobby.state().players[0];
+  assert.equal(after.x, stopped.x);
+  assert.equal(after.y, stopped.y);
+  assert.equal(after.moving, false);
   await f.lobby.close();
 });
 

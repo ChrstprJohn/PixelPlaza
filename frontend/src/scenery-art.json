@@ -1,0 +1,300 @@
+{
+  "garden": {
+    "image": "/assets/scenery-garden.webp?v=0a78558fcd",
+    "width": 640,
+    "height": 640,
+    "frames": {
+      "fountain": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 160,
+          "y": 0,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 320,
+          "y": 0,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 480,
+          "y": 0,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        }
+      ],
+      "tree": [
+        {
+          "x": 0,
+          "y": 160,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 160,
+          "y": 160,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 320,
+          "y": 160,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 480,
+          "y": 160,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        }
+      ],
+      "cherry": [
+        {
+          "x": 0,
+          "y": 320,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 160,
+          "y": 320,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 320,
+          "y": 320,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 480,
+          "y": 320,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        }
+      ],
+      "bush": [
+        {
+          "x": 0,
+          "y": 480,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 160,
+          "y": 480,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 320,
+          "y": 480,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 480,
+          "y": 480,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        }
+      ]
+    },
+    "characterHeights": {
+      "fountain": 124.98780487804878,
+      "tree": 136.71951219512195,
+      "cherry": 148.0,
+      "bush": 87.98780487804878
+    }
+  },
+  "haunted": {
+    "image": "/assets/scenery-haunted.webp?v=0c43ad96c0",
+    "width": 640,
+    "height": 640,
+    "frames": {
+      "fountain": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 160,
+          "y": 0,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 320,
+          "y": 0,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 480,
+          "y": 0,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        }
+      ],
+      "tree": [
+        {
+          "x": 0,
+          "y": 160,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 160,
+          "y": 160,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 320,
+          "y": 160,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 480,
+          "y": 160,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        }
+      ],
+      "cherry": [
+        {
+          "x": 0,
+          "y": 320,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 160,
+          "y": 320,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 320,
+          "y": 320,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 480,
+          "y": 320,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        }
+      ],
+      "bush": [
+        {
+          "x": 0,
+          "y": 480,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 160,
+          "y": 480,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 320,
+          "y": 480,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        },
+        {
+          "x": 480,
+          "y": 480,
+          "width": 160,
+          "height": 160,
+          "anchorX": 0.5,
+          "anchorY": 0.9625
+        }
+      ]
+    },
+    "characterHeights": {
+      "fountain": 123.33333333333333,
+      "tree": 127.44444444444444,
+      "cherry": 137.9506172839506,
+      "bush": 89.98765432098764
+    }
+  }
+}
