@@ -1,0 +1,24 @@
+# Future deployment only. Run from the repository root after copying to compose.vm.yaml.
+services:
+  pixelplaza:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: pixelplaza
+    restart: unless-stopped
+    env_file: [.env.production]
+    environment:
+      HOST: 0.0.0.0
+      PORT: '3001'
+    mem_limit: 96m
+    networks: [app_network]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs: [/tmp]
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+networks:
+  app_network:
+    external: true

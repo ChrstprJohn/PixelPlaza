@@ -1,0 +1,36 @@
+# Architecture
+
+## During local development
+
+```text
+Browser on localhost:5173 (React + Phaser, future)
+  → local PixelPlaza backend on 127.0.0.1:3001
+      → VM Redis HTTPS: expiring sessions and rate counters
+      → VM realtime HTTPS API: connection tokens and event publishing
+  → VM Centrifugo WebSocket: receives authorized lobby updates
+```
+
+The browser never calls Redis or receives project API keys. The local backend uses the ignored `.env.local`. VM Redis and realtime are shared with other projects but PixelPlaza has its own credentials, key patterns and channel prefix.
+
+## Player flow to implement
+
+1. Browser submits nickname/avatar to the local backend. Backend validates them, checks lobby capacity and creates a guest identity/session.
+2. Backend returns current lobby state and a short-lived JWT after approving access to `pixelplaza/lobby/main`. Guest credentials must be unguessable and supplied on subsequent backend requests; choose the cookie/token mechanism during implementation.
+3. Browser connects to `wss://realtime.chrbuilds.dev/connection/websocket`. Its signed JWT assigns the approved subscription; it cannot subscribe to another project's channel or publish directly.
+4. Browser sends movement inputs to PixelPlaza's backend. Backend validates identity, speed and bounds, updates its current memory state, and broadcasts a batched snapshot at 5 Hz.
+5. Backend validates/rate-limits chat before publishing it. Incoming messages are treated as text, never executable HTML.
+6. Heartbeats update liveness. On leave/timeout the backend releases the player slot and announces the change. Reconnects re-fetch current state instead of assuming every live event was received.
+
+## Storage boundaries
+
+| Data | Storage | Lifetime |
+|---|---|---|
+| Current player positions, avatar, facing, membership | Node memory | Until leave/timeout/backend restart |
+| Guest session validation | Redis `pixelplaza:session:*` | Bounded automatic TTL |
+| Join/chat rate counters | Redis `pixelplaza:rate:*` | Short automatic TTL |
+| Movement/chat broadcasts | Centrifugo | Live delivery only |
+| Accounts/inventory/saved content | Not implemented | Future PostgreSQL |
+
+Redis has a shared 128 MiB data limit, no eviction and AOF disk persistence. Expiring keys keep temporary records bounded; they do not make capacity unlimited. A Redis write failure must fail closed for protected actions. PixelPlaza cannot read `schedsnap:*` or run Redis administrative commands.
+
+Centrifugo uses its memory engine; the application Redis is not its broker. History/presence are disabled. The global connection cap is configured at 500 and 5 per scoped user, not a proven game capacity. PixelPlaza adds its own 10-player cap.
