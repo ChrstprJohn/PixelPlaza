@@ -1,0 +1,126 @@
+{
+  "rawInputs": [
+    {
+      "file": "art/qa/pumpkin-motion-v2/sheet-qc.json",
+      "status": "fail",
+      "findings": [
+        {
+          "id": "cross_cell_components",
+          "status": "fail",
+          "value": 33,
+          "threshold": 0
+        },
+        {
+          "id": "cross_cell_visible",
+          "status": "fail",
+          "value": 36,
+          "threshold": 0
+        },
+        {
+          "id": "boundary_band",
+          "status": "warn",
+          "value": 2393,
+          "threshold": 0
+        },
+        {
+          "id": "safe_frame",
+          "status": "warn",
+          "value": 64,
+          "threshold": 0
+        },
+        {
+          "id": "faint_specks",
+          "status": "warn",
+          "value": {
+            "floor_px": 105019,
+            "detached_components": 25
+          },
+          "threshold": 0
+        }
+      ],
+      "resolvedBy": "Extract complete subjects from actual alpha bands, align torso centres, pack with safe margins, and use binary runtime alpha."
+    },
+    {
+      "file": "art/qa/bat-motion-v2/sheet-qc.json",
+      "status": "fail",
+      "findings": [
+        {
+          "id": "cross_cell_components",
+          "status": "fail",
+          "value": 14,
+          "threshold": 0
+        },
+        {
+          "id": "cross_cell_visible",
+          "status": "fail",
+          "value": 16,
+          "threshold": 0
+        },
+        {
+          "id": "boundary_band",
+          "status": "warn",
+          "value": 1041,
+          "threshold": 0
+        },
+        {
+          "id": "safe_frame",
+          "status": "warn",
+          "value": 64,
+          "threshold": 0
+        },
+        {
+          "id": "faint_specks",
+          "status": "warn",
+          "value": {
+            "floor_px": 151459,
+            "detached_components": 45
+          },
+          "threshold": 0
+        }
+      ],
+      "resolvedBy": "Extract complete subjects from actual alpha bands, align torso centres, pack with safe margins, and use binary runtime alpha."
+    }
+  ],
+  "runtime": [
+    {
+      "file": "frontend/public/assets/haunted-sprout-walk-v2.webp",
+      "status": "pass",
+      "findings": []
+    },
+    {
+      "file": "frontend/public/assets/haunted-mushroom-walk-v2.webp",
+      "status": "pass",
+      "findings": []
+    },
+    {
+      "file": "frontend/public/assets/garden-cat-walk-v2.webp",
+      "status": "pass",
+      "findings": []
+    },
+    {
+      "file": "frontend/public/assets/garden-sprout-walk-v2.webp",
+      "status": "pass",
+      "findings": []
+    },
+    {
+      "file": "frontend/public/assets/garden-mushroom-walk-v2.webp",
+      "status": "pass",
+      "findings": []
+    },
+    {
+      "file": "frontend/public/assets/garden-robot-walk-v2.webp",
+      "status": "pass",
+      "findings": []
+    },
+    {
+      "file": "frontend/public/assets/haunted-cat-walk-v2.webp",
+      "status": "pass",
+      "findings": []
+    },
+    {
+      "file": "frontend/public/assets/haunted-robot-walk-v2.webp",
+      "status": "pass",
+      "findings": []
+    }
+  ]
+}

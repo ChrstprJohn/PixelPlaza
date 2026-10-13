@@ -140,7 +140,7 @@
 .in-lobby .walk-hint{font-size:22px;padding:18px 24px;gap:12px;min-width:270px}
 .in-lobby .walk-hint .walk-keys{font-size:14px}
 .room-picker{width:min(960px,calc(100% - 48px));margin:auto;min-height:calc(100dvh - 72px);display:flex;flex-direction:column;justify-content:center;padding:40px 0}
-.room-picker>.text-button{align-self:flex-start;margin-bottom:20px}
+.room-picker>.text-button{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;margin-bottom:20px}
 .room-picker h1{font-family:'Pixelify Sans',sans-serif;font-size:clamp(36px,5vw,56px);line-height:1.1;margin:0 0 28px}
 .room-list{display:grid;grid-template-columns:1fr 1fr;gap:24px}
 .room-option{padding:0;text-align:left;border:0;border-radius:14px;overflow:hidden;background:#efe5d0;color:var(--color-text);transition:transform .18s ease-out}

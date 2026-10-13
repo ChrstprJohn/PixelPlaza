@@ -7,6 +7,7 @@ import directionalArt from './directional-art.json';
 import sceneryArt from './scenery-art.json';
 import benchArt from './bench-art.json';
 import { LOBBIES } from '../../shared/lobbies.js';
+import { characterMotion, movementPose } from './character-motion.js';
 
 export default function Game({ players, selfId, messages, onMove, onError, controlsPaused = false, lobbyId = 'garden', onReady }) {
   const art = lobbyId === 'haunted' ? hauntedArt : gardenArt;
@@ -137,6 +138,7 @@ export default function Game({ players, selfId, messages, onMove, onError, contr
         const ids = new Set(data.players.map(p => p.id));
         for (const [id, object] of this.avatars) if (!ids.has(id)) { object.group.destroy(true); this.avatars.delete(id); }
         for (const player of data.players) {
+          const motion = characterMotion[theme][player.character];
           let object = this.avatars.get(player.id);
           if (!object) {
             const sprite = this.add.sprite(0, 0, 'characters', `${player.character}-0`).setOrigin(art.frames[player.character][0].anchorX, 1);
@@ -180,17 +182,15 @@ export default function Game({ players, selfId, messages, onMove, onError, contr
           }
           object.group.setPosition(object.x, object.y).setDepth(object.y);
           if (me && (dx || dy)) object.direction = facingDirection(dx, dy);
-          if (moving && !this.reducedMotion.matches) {
+          if ((moving || motion.action === 'fly') && !this.reducedMotion.matches) {
             // Keep foot contacts tied to actual travel, including direction changes.
             const oldStep = Math.floor(object.walkPhase * 2);
-            object.walkPhase += Math.hypot(object.x - previousX, object.y - previousY) / 72;
-            const frames = walkingArt[player.character].frames[object.direction];
-            const index = Math.floor((object.walkPhase % 1) * frames.length);
+            if (moving && motion.action === 'walk') object.walkPhase += Math.hypot(object.x - previousX, object.y - previousY) / motion.stride;
+            const pose = movementPose(motion, object.walkPhase, time);
             object.sprite.anims.stop();
-            object.sprite.setTexture(`walk-${player.character}`, `${object.direction}-${index}`);
-            if (Math.floor(object.walkPhase * 2) !== oldStep) this.emitDust(object, time);
-            object.idleAction = null;
-            object.nextIdle = time + 5000 + Math.random() * 7000;
+            object.sprite.setTexture(`walk-${player.character}`, `${object.direction}-${pose.frame}`);
+            if (motion.action === 'walk' && Math.floor(object.walkPhase * 2) !== oldStep) this.emitDust(object, time);
+            if (moving) { object.idleAction = null; object.nextIdle = time + 5000 + Math.random() * 7000; }
           }
           else if (!this.reducedMotion.matches) {
             object.sprite.play(`${player.character}-idle`, true);
@@ -204,9 +204,9 @@ export default function Game({ players, selfId, messages, onMove, onError, contr
           const walking = object.sprite.texture.key.startsWith('walk-');
           const crop = walking ? walkingArt[player.character].frames[object.direction][frameIndex] : art.frames[player.character][frameIndex];
           const scale = 48 / (walking ? walkingArt[player.character].bodyHeight : art.characterHeights[player.character]);
-          let lift = 0, squash = 1, offset = 0;
+          let lift = this.reducedMotion.matches ? 0 : movementPose(motion, object.walkPhase, time).lift, squash = 1, offset = 0;
           if (!moving && !this.reducedMotion.matches) {
-            if (!object.idleAction && time >= object.nextIdle) object.idleAction = { start: time, kind: Math.random() < .55 ? 'hop' : 'peek' };
+            if (!object.idleAction && time >= object.nextIdle) object.idleAction = { start: time, kind: motion.action === 'walk' && Math.random() < .55 ? 'hop' : 'peek' };
             if (object.idleAction) {
               const progress = (time - object.idleAction.start) / (object.idleAction.kind === 'hop' ? 900 : 1600);
               if (progress >= 1) { object.idleAction = null; object.nextIdle = time + 6500 + Math.random() * 8000; }

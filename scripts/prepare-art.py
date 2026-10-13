@@ -23,7 +23,13 @@ def runs(values, minimum=8):
             start = None
     return result
 
-def atlas(path, labels, columns, cell, runtime_name):
+def body_centre(crop):
+    core = np.array(crop.getchannel('A')) >= 160
+    core = core[round(crop.height * .2):round(crop.height * .6)]
+    centres = [(np.flatnonzero(line)[0] + np.flatnonzero(line)[-1] + 1) / 2 for line in core if line.any()]
+    return float(np.median(centres)) if centres else crop.width / 2
+
+def atlas(path, labels, columns, cell, runtime_name, lock_body=False):
     image = Image.open(path).convert('RGBA')
     alpha = np.array(image.getchannel('A')) >= 160
     bands = runs(alpha.sum(axis=1) > 8)
@@ -43,7 +49,10 @@ def atlas(path, labels, columns, cell, runtime_name):
         cropped_rows.append(crops)
     # One scale and root for every pose; the fixed row ground line preserves bob.
     maximum = max(max(crop.width, crop.height) for row in cropped_rows for crop, box in row)
-    scale = (cell - 12) / maximum
+    if lock_body:
+        maximum = max(max(max(box[3] for _, box in row) - box[1], 2 * max(body_centre(crop), crop.width - body_centre(crop))) for row in cropped_rows for crop, box in row)
+    margin = 12 if lock_body else 6
+    scale = min(52, cell - margin * 2) / maximum if lock_body else (cell - 12) / maximum
     output = Image.new('RGBA', (columns * cell, len(labels) * cell))
     frames, heights = {}, {}
     for row, label in enumerate(labels):
@@ -54,11 +63,18 @@ def atlas(path, labels, columns, cell, runtime_name):
         frames[label] = []
         for col, (crop, box) in enumerate(crops):
             # Contact anchor is consistent across frames instead of alpha-bbox bottoms.
-            x = col * cell + (cell - round(crop.width * scale)) // 2
-            y = row * cell + cell - 6 - round((baseline - box[1]) * scale)
+            if lock_body:
+                x = col * cell + cell // 2 - round(body_centre(crop) * scale)
+            else:
+                x = col * cell + (cell - round(crop.width * scale)) // 2
+            y = row * cell + cell - margin - round((baseline - box[1]) * scale)
             resized = crop.resize((max(1, round(crop.width * scale)), max(1, round(crop.height * scale))), Image.Resampling.LANCZOS)
+            if lock_body:
+                resized.putalpha(resized.getchannel('A').point(lambda value: 255 if value >= 128 else 0))
+            assert col * cell <= x and x + resized.width <= (col + 1) * cell, f'Horizontal frame spill: {path.name} {label}/{col}'
+            assert row * cell <= y and y + resized.height <= (row + 1) * cell, f'Vertical frame spill: {path.name} {label}/{col}'
             output.alpha_composite(resized, (x, y))
-            frames[label].append({'x': col * cell, 'y': row * cell, 'width': cell, 'height': cell, 'anchorX': .5, 'anchorY': (cell - 6) / cell})
+            frames[label].append({'x': col * cell, 'y': row * cell, 'width': cell, 'height': cell, 'anchorX': .5, 'anchorY': (cell - margin) / cell})
     output.save(PUBLIC / runtime_name, 'WEBP', quality=88, method=6, exact=True)
     digest = hashlib.sha256((PUBLIC / runtime_name).read_bytes()).hexdigest()[:10]
     return {'image': '/assets/' + runtime_name + '?v=' + digest, 'width': output.width, 'height': output.height, 'frames': frames, 'characterHeights': heights}
@@ -79,7 +95,9 @@ scenery = {}
 for theme in ['garden', 'haunted']:
     directional[theme] = {}
     for name in ['cat', 'sprout', 'mushroom', 'robot']:
-        data = atlas(SOURCE / f'{theme}-{name}-directional.png', DIRECTIONS, 8, 64, f'{theme}-{name}-walk.webp')
+        source = SOURCE / f'{theme}-{name}-directional-v2.png'
+        if not source.exists(): source = SOURCE / f'{theme}-{name}-directional.png'
+        data = atlas(source, DIRECTIONS, 8, 80, f'{theme}-{name}-walk-v2.webp', lock_body=True)
         data['bodyHeight'] = max(data.pop('characterHeights').values())
         directional[theme][name] = data
     scenery[theme] = atlas(SOURCE / f'{theme}-scenery.png', ['fountain', 'tree', 'cherry', 'bush'], 4, 160, f'scenery-{theme}.webp')
