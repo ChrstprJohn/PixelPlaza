@@ -3,7 +3,7 @@
 ## During local development
 
 ```text
-Browser on localhost:5173 (React + Phaser, future)
+Browser on localhost:5173 (React + Phaser)
   → local PixelPlaza backend on 127.0.0.1:3001
       → VM Redis HTTPS: expiring sessions and rate counters
       → VM realtime HTTPS API: connection tokens and event publishing
@@ -12,7 +12,7 @@ Browser on localhost:5173 (React + Phaser, future)
 
 The browser never calls Redis or receives project API keys. The local backend uses the ignored `.env.local`. VM Redis and realtime are shared with other projects but PixelPlaza has its own credentials, key patterns and channel prefix.
 
-## Player flow to implement
+## Implemented player flow
 
 1. Browser submits nickname/avatar to the local backend. Backend validates them, checks lobby capacity and creates a guest identity/session.
 2. Backend returns current lobby state and a short-lived JWT after approving access to `pixelplaza/lobby/main`. Guest credentials must be unguessable and supplied on subsequent backend requests; choose the cookie/token mechanism during implementation.
@@ -28,6 +28,8 @@ The browser never calls Redis or receives project API keys. The local backend us
 | Current player positions, avatar, facing, membership | Node memory | Until leave/timeout/backend restart |
 | Guest session validation | Redis `pixelplaza:session:*` | Bounded automatic TTL |
 | Join/chat rate counters | Redis `pixelplaza:rate:*` | Short automatic TTL |
+| Recent chat | Redis `pixelplaza:lobby:INSTANCE:chat` | Latest 60 messages; 15-minute inactivity TTL |
+| Latest lobby snapshot | One overwritten Redis `pixelplaza:lobby:INSTANCE:state` key | 60-second TTL |
 | Movement/chat broadcasts | Centrifugo | Live delivery only |
 | Accounts/inventory/saved content | Not implemented | Future PostgreSQL |
 

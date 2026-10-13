@@ -35,3 +35,18 @@ test('service helpers reject wrong projects and upstream errors', async () => {
   const broken = createServices(env, async () => ({ ok: true, json: async () => ({ error: 'denied' }) }));
   await assert.rejects(broken.redis(['PING']));
 });
+
+test('HTTP routes reject untrusted origins, missing sessions, malformed JSON and oversized bodies', async () => {
+  const lobby = { read: async token => { if (!token) { const { ApiError } = await import('../src/lobby.js'); throw new ApiError(401, 'Join first'); } return {}; }, join: async () => ({ ok: true }) };
+  const server = createBackend({ lobby });
+  server.listen(0, '127.0.0.1'); await new Promise(resolve => server.once('listening', resolve));
+  const url = `http://127.0.0.1:${server.address().port}`;
+  try {
+    assert.equal((await fetch(url + '/api/lobby')).status, 401);
+    assert.equal((await fetch(url + '/health', { headers: { Origin: 'https://untrusted.example' } })).status, 403);
+    const post = body => fetch(url + '/api/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+    assert.equal((await post('{bad')).status, 400);
+    assert.equal((await post(JSON.stringify({ name: 'x'.repeat(5000) }))).status, 413);
+    assert.equal((await post(JSON.stringify({ name: '日本のゲスト', character: 'cat' }))).status, 200);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});

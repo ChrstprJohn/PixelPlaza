@@ -3,11 +3,19 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "engines": { "node": ">=22.12.0" },
-  "workspaces": ["backend", "frontend"],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
     "dev:backend": "node --env-file=.env.local backend/src/index.js",
     "test": "node --test backend/test/*.test.js",
-    "check:services": "node --env-file=.env.local scripts/check-services.js"
+    "check:services": "node --env-file=.env.local scripts/check-services.js",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace frontend",
+    "check:lobby": "node --env-file=.env.local scripts/check-lobby.js"
   }
 }
