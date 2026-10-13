@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { WORLD, CHARACTERS, movePosition } from '../../shared/world.js';
 import spriteBounds from './sprite-bounds.json';
 
 export default function Game({ players, selfId, messages, onMove, onError }) {
   const element = useRef(null);
+  const [activated, setActivated] = useState(false);
   const touch = useRef({ dx: 0, dy: 0 });
   const live = useRef({ players, selfId, messages, onMove, onError });
   live.current = { players, selfId, messages, onMove, onError };
@@ -27,8 +28,14 @@ export default function Game({ players, selfId, messages, onMove, onError }) {
         node.tabIndex = 0; node.setAttribute('aria-label', 'Walkable plaza. Use WASD or arrow keys.');
         this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT', false);
         this.input.keyboard.enabled = false;
-        this.focus = () => { this.input.keyboard.enabled = true; };
-        this.blur = () => { this.input.keyboard.enabled = false; this.input.keyboard.resetKeys(); };
+        this.focus = () => { this.input.keyboard.enabled = true; setActivated(true); };
+        this.blur = () => { touch.current = { dx: 0, dy: 0 }; this.input.keyboard.enabled = false; this.input.keyboard.resetKeys(); };
+        this.outside = event => {
+          if (!element.current?.parentElement?.contains(event.target)) {
+            setActivated(false); touch.current = { dx: 0, dy: 0 }; node.blur();
+          }
+        };
+        document.addEventListener('pointerdown', this.outside);
         node.addEventListener('focus', this.focus); node.addEventListener('blur', this.blur);
         node.addEventListener('pointerdown', () => node.focus());
       }
@@ -83,9 +90,9 @@ export default function Game({ players, selfId, messages, onMove, onError }) {
       }
     }
     game = new Phaser.Game({ type: Phaser.AUTO, parent: element.current, width: WORLD.width, height: WORLD.height, pixelArt: true, backgroundColor: '#b8cf80', scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }, scene: Plaza, audio: { noAudio: true }, banner: false });
-    return () => { if (sceneReady) { game.canvas.removeEventListener('focus', scene.focus); game.canvas.removeEventListener('blur', scene.blur); } game.destroy(true); };
+    return () => { if (sceneReady) { document.removeEventListener('pointerdown', scene.outside); game.canvas.removeEventListener('focus', scene.focus); game.canvas.removeEventListener('blur', scene.blur); } game.destroy(true); };
   }, []);
-  const start = (event, dx, dy) => { event.currentTarget.setPointerCapture(event.pointerId); touch.current = { dx, dy }; };
+  const start = (event, dx, dy) => { element.current?.querySelector("canvas")?.focus(); event.currentTarget.setPointerCapture(event.pointerId); touch.current = { dx, dy }; };
   const stop = () => { touch.current = { dx: 0, dy: 0 }; };
-  return <div className="game-frame"><div ref={element} className="game-canvas" /><span className="walk-hint">Click the plaza · WASD or arrow keys to walk</span><div className="touch-pad" aria-label="Walking controls">{[['up',0,-1],['left',-1,0],['down',0,1],['right',1,0]].map(([direction,dx,dy]) => <button key={direction} className={`walk-${direction}`} aria-label={`Walk ${direction}`} onPointerDown={event => start(event, dx, dy)} onPointerUp={stop} onPointerCancel={stop} onLostPointerCapture={stop}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3 4 11h4v6h4v-6h4z" fill="currentColor"/></svg></button>)}</div></div>;
+  return <div className={`game-frame ${activated ? "is-controlled" : "awaiting-control"}`}><div ref={element} className="game-canvas" /><button className="walk-hint" hidden={activated} onClick={() => element.current?.querySelector("canvas")?.focus()}>Click to control<span className="walk-keys" aria-label="WASD or arrow keys">{["W", "A", "S", "D"].map(key => <kbd key={key}>{key}</kbd>)}<span>or arrow keys</span></span></button><div className="touch-pad" aria-label="Walking controls">{[['up',0,-1],['left',-1,0],['down',0,1],['right',1,0]].map(([direction,dx,dy]) => <button key={direction} className={`walk-${direction}`} aria-label={`Walk ${direction}`} onPointerDown={event => start(event, dx, dy)} onPointerUp={stop} onPointerCancel={stop} onLostPointerCapture={stop}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3 4 11h4v6h4v-6h4z" fill="currentColor"/></svg></button>)}</div></div>;
 }
