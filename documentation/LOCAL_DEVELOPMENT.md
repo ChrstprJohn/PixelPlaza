@@ -24,7 +24,7 @@ Visit `http://127.0.0.1:3001/health`. Stop with Ctrl+C before ending your sessio
 
 Registered Centrifugo browser origins: `http://localhost:5173` and `http://127.0.0.1:5173`. Backend requests use project Bearer auth over the internet; they are not limited to Docker's internal network.
 
-On another PC, request/copy these credentials privately from the owner. They are not recoverable from Git. On the VM, private combined setup env is `~/realtime/credentials/pixelplaza.local.env`; realtime-only env is `~/realtime/credentials/pixelplaza.env`; Redis-only env is `~/redis/pixelplaza.env`.
+On another PC, request/copy these credentials privately from the owner. They are not recoverable from Git. On the VM, private combined setup env is `~/realtime/credentials/pixelplaza.local.env`; realtime-only env is `~/realtime/credentials/pixelplaza.env`; Redis-only env is `~/redis/pixelplaza.redis.env`. Redis project files follow `PROJECT.redis.env`, matching `schedsnap.redis.env`. The combined local backend file remains `.env.local`.
 
 ## VM service management
 
