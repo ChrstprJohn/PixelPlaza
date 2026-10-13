@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Centrifuge } from 'centrifuge';
-import { api } from './api.js';
+import { api, apiUrl } from './api.js';
 import PixelReveal from './PixelReveal.jsx';
 const Game = lazy(() => import('./Game.jsx'));
 const avatars = [{ id: 'cat', name: 'Milo', color: '#c86135' }, { id: 'sprout', name: 'Fern', color: '#3f7952' }, { id: 'mushroom', name: 'Pip', color: '#c55042' }, { id: 'robot', name: 'Bolt', color: '#327090' }];
@@ -41,7 +41,7 @@ export default function App() {
     client.on('publication', event => { if (event.data.type === 'lobby.state') applyState(event.data); else if (event.data.type === 'chat.message') mergeMessages([event.data.message]); });
     client.connect();
     const heartbeat = setInterval(async () => {
-      try { const state = await api('/api/heartbeat', { token: session.sessionToken, body: {} }); if (!disposed) { setDelayed(state.realtimeDelayed); setError(old => old === 'The local server is unavailable. Start the backend and try again.' || old === 'Failed to fetch' ? '' : old); } } catch (e) { if (!disposed) failure(e); }
+      try { const state = await api('/api/heartbeat', { token: session.sessionToken, body: {} }); if (!disposed) { setDelayed(state.realtimeDelayed); setError(old => old === 'Unable to reach the plaza server. Please try again.' || old === 'Failed to fetch' ? '' : old); } } catch (e) { if (!disposed) failure(e); }
     }, 10000);
     const resync = setInterval(sync, 10000);
     const visibility = () => { if (!document.hidden) void sync(); };
@@ -49,7 +49,7 @@ export default function App() {
     return () => { disposed = true; clearInterval(heartbeat); clearInterval(resync); client.disconnect(); document.removeEventListener('visibilitychange', visibility); };
   }, [session]);
   useEffect(() => { chatEnd.current?.scrollIntoView({ block: 'nearest' }); }, [messages]);
-  useEffect(() => { const unload = () => { const current = active.current; if (current) void fetch('/api/leave', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${current.sessionToken}` }, body: '{}', keepalive: true }).catch(() => {}); }; window.addEventListener('pagehide', unload); return () => window.removeEventListener('pagehide', unload); }, []);
+  useEffect(() => { const unload = () => { const current = active.current; if (current) void fetch(apiUrl('/api/leave'), { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${current.sessionToken}` }, body: '{}', keepalive: true }).catch(() => {}); }; window.addEventListener('pagehide', unload); return () => window.removeEventListener('pagehide', unload); }, []);
   async function send(event) {
     event.preventDefault(); if (!draft.trim() || busy) return; setBusy(true); setError('');
     try { const result = await api('/api/chat', { token: session.sessionToken, body: { text: draft } }); mergeMessages([result.message]); setDelayed(result.realtimeDelayed); setDraft(''); } catch (e) { failure(e); } finally { setBusy(false); }
