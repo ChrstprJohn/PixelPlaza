@@ -2,7 +2,7 @@
 
 ## Current state
 
-The backend is deployed and running in Docker on the Azure VM from `~/apps/pixelplaza`, application commit `594d005` on `main` (updated 2026-10-15). Caddy serves `https://pixelplaza-api.chrbuilds.dev`; its DNS A record points to `74.176.65.214`. `/health` returns 200 over HTTPS, public `GET /api/lobbies` lists the available plazas, and `GET /api/visits` returns the real PostHog pageview aggregate. The bare `/` path returns JSON `Not found` by design because this hostname serves the API, not a web page.
+The backend is deployed and running in Docker on the Azure VM from `~/apps/pixelplaza`, application commit `6b4a0e4` on `main` (updated 2026-10-15). Caddy serves `https://pixelplaza-api.chrbuilds.dev`; its DNS A record points to `74.176.65.214`. `/health` returns 200 over HTTPS, public `GET /api/lobbies` lists the available plazas, and `GET /api/visits` returns the real PostHog pageview aggregate. The bare `/` path returns JSON `Not found` by design because this hostname serves the API, not a web page.
 
 The `pixelplaza` container is configured to join `app_network`, has no published host port, and has a 96 MiB memory limit. It uses the private `~/apps/pixelplaza/.env.production` file (mode 600). Its Redis/realtime credentials stay on the backend. The API allows the exact Vercel origin `https://pixelplaza-live.vercel.app`; both realtime origin allowlists include it too.
 
@@ -60,3 +60,9 @@ To stop only the PixelPlaza API again, run `docker stop pixelplaza`. This leaves
 Backend restarts clear the in-memory lobby and connected players must rejoin. Temporary chat remains in Redis until its 15-minute inactivity TTL expires. Do not remove shared Redis volumes or restart unrelated services during a backend update.
 
 The VM is small and also runs n8n, Redis and shared realtime. The backend is limited to 96 MiB; the 10-player lobby limit is not a measured load guarantee. Sustained load has not been tested.
+
+## Iframe deployment - 2026-10-15
+
+After explicit approval, the VM checkout was fast-forwarded to application commit `6b4a0e4`, and only `POSTHOG_DASHBOARD_EMBED_URL` was securely added to the existing private `~/apps/pixelplaza/.env.production` (mode 600). All other runtime settings, installed Compose/env paths, networks and volumes were preserved. Only `pixelplaza` was rebuilt/recreated; unrelated running container IDs were unchanged. The URL/share token is not recorded here.
+
+The API and Vercel `/api/admin/dashboard` endpoints returned 401 while signed out. Headless Edge signed into the live admin, loaded the real dashboard at 1440px and 390px widths, verified all 17 mobile chart headings fit within the reported 8289px iframe height, then signed out. The authenticated endpoint returned 200 with the validated embedded URL. These are emulated browser checks; the height is a verification snapshot.

@@ -39,7 +39,7 @@ Every event also includes site/environment tags. `lobby_left` records the explic
 
 ## Dashboard and verification
 
-Use [the PixelPlaza dashboard prompt](DASHBOARD.md) to create or revise insights in the shared project. The owner supplied a shared PixelPlaza dashboard link, now configured locally for the admin Analytics iframe. The embed uses backend-only `POSTHOG_DASHBOARD_EMBED_URL`; it does not need a personal API key. See [the embedding guide](EMBED.md) for where to get the link, backend/production settings, admin access and responsive behavior. The separate read-only query key remains necessary for the landing-page total.
+Use [the PixelPlaza dashboard prompt](DASHBOARD.md) to create or revise insights in the shared project. The owner supplied a shared PixelPlaza dashboard link, now configured locally and in production for the admin Analytics iframe. The embed uses backend-only `POSTHOG_DASHBOARD_EMBED_URL`; it does not need a personal API key. See [the embedding guide](EMBED.md) for where to get the link, backend/production settings, admin access and responsive behavior. The separate read-only query key remains necessary for the landing-page total.
 
 ## Landing-page statistics
 

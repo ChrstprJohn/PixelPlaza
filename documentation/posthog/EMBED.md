@@ -12,7 +12,7 @@ This follows SchedSnap's setup: the backend stores the dashboard link, an authen
    POSTHOG_DASHBOARD_EMBED_URL=https://us.posthog.com/shared/YOUR_SHARE_TOKEN
    ```
 
-   Both `/shared/` and `/embedded/` links work; the backend converts shared links to embedded links. The owner's provided PixelPlaza URL is already configured locally. Keep the real share token out of committed examples.
+   Both `/shared/` and `/embedded/` links work; the backend converts shared links to embedded links. The owner's provided PixelPlaza URL is configured locally and in the VM's private production env. Keep the real share token out of committed examples.
 
 4. Restart the backend with `npm run dev:backend`, or update the existing VM runtime file `~/apps/pixelplaza/.env.production` and recreate only the PixelPlaza container for production. The current installed Compose file loads that root production env file; do not change its path just to set this variable. Frontend and backend code must both include the embed feature.
 5. Sign in at `/admin`, then select **Analytics**. The dashboard should render inside PixelPlaza. Use **Open dashboard in new tab** if an extension or browser restriction blocks framing.
@@ -32,5 +32,7 @@ The admin login limits where the app reveals the URL. Public sharing still lets 
 ## Verification
 
 On 2026-10-15, all 24 tests and the production build passed. Backend checks cover sign-in protection, absent settings, shared-link conversion, supported PostHog hosts and rejection of unrelated/insecure/credential-bearing URLs. Headless Edge loaded the actual owner-supplied dashboard inside the built local admin app at 1440px desktop and 390px phone widths. It verified chart headings fit the mobile viewport, the outer page does not scroll sideways, and PostHog's height messages resize the frame. Mocked states verified missing/invalid settings, retry, and rejection of messages with the wrong origin, source, frame name or invalid height. PostHog retains a small internal document gutter; PixelPlaza uses the same no-internal-scrollbar approach as SchedSnap. These are emulated browser checks, not physical-phone testing.
+
+Live deployment on 2026-10-15: application commit `6b4a0e4` and the backend dashboard setting were deployed after approval. Signed-in desktop/mobile checks passed against the real dashboard; all 17 mobile chart headings fit within the 8289px iframe height at verification time. Signing out restored HTTP 401 for the dashboard endpoint.
 
 Reference: [PostHog dashboard sharing and embedding](https://posthog.com/docs/product-analytics/dashboards#sharing-a-dashboard).
