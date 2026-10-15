@@ -5,6 +5,10 @@
   "outputDirectory": "frontend/dist",
   "rewrites": [
     {
+      "source": "/api/visits",
+      "destination": "https://pixelplaza-api.chrbuilds.dev/api/visits"
+    },
+    {
       "source": "/api/admin/:path*",
       "destination": "https://pixelplaza-api.chrbuilds.dev/api/admin/:path*"
     },

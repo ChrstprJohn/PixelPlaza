@@ -10,7 +10,7 @@ Browser on localhost:5173 (React + Phaser)
   → VM Centrifugo WebSocket: receives authorized lobby updates
 ```
 
-The browser never calls Redis or receives project API keys. The local backend uses the ignored `.env.local`. VM Redis and realtime are shared with other projects but PixelPlaza has its own credentials, key patterns and channel prefix.
+The browser never calls Redis or receives private project API keys. The local backend uses the ignored `backend/.env.local`; Vite reads only public `VITE_` settings from `frontend/.env.local`. VM Redis and realtime are shared with other projects but PixelPlaza has its own credentials, key patterns and channel prefix.
 
 ## Implemented player flow
 

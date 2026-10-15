@@ -17,7 +17,9 @@ Visit `http://127.0.0.1:3001/health`. In another foreground terminal, run `npm r
 
 ## Private environment
 
-`.env.local` contains generated PixelPlaza-specific credentials. `.env.example` has placeholders only and is safe to commit. Never commit `.env.local`, copy it into browser code or paste its values into logs.
+`backend/.env.local` contains generated PixelPlaza-specific backend credentials. Copy `backend/.env.example` there on a new machine and fill in private values. The root backend and service-check npm scripts explicitly load this file. Never commit it, copy it into browser code or paste its values into logs.
+
+`frontend/.env.local` contains only public `VITE_` settings: `VITE_API_BASE_URL`, `VITE_POSTHOG_TOKEN` and `VITE_POSTHOG_HOST`. Vite loads it automatically from the frontend workspace. Copy `frontend/.env.example` there on a new machine. Leave the API base URL empty for the local proxy, or set the public deployed API origin to use that server. Vercel takes these same frontend variables from its build settings. Both examples contain placeholders for credentials; local files are Git-ignored. There are no env files at the repository root.
 
 - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`: your own VM gateway, using the familiar Upstash-compatible protocol. The Redis ACL restricts this token to `pixelplaza:*` and session/rate-limit commands.
 - `REALTIME_API_URL`, `REALTIME_API_KEY`: server-only project API access.
@@ -25,10 +27,11 @@ Visit `http://127.0.0.1:3001/health`. In another foreground terminal, run `npm r
 - `REALTIME_WEBSOCKET_URL`: public URL; the frontend can know it.
 - `FRONTEND_ORIGIN=http://localhost:5173`: exact app origin validation. For local development the backend also accepts its equivalent `127.0.0.1` origin.
 - `LOBBY_PLAYER_LIMIT=10`: enforced lobby maximum; configurable between 1 and 10.
+- `POSTHOG_PROJECT_ID`, `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_API_HOST`: server-only read access for the landing-page production pageview total. These belong in `backend/.env.local`, never the frontend. See [counting and cache rules](posthog/README.md#landing-page-statistics).
 
 Registered Centrifugo browser origins: `http://localhost:5173` and `http://127.0.0.1:5173`. Backend requests use project Bearer auth over the internet; they are not limited to Docker's internal network.
 
-On another PC, request/copy these credentials privately from the owner. They are not recoverable from Git. On the VM, private combined setup env is `~/realtime/credentials/pixelplaza.local.env`; realtime-only env is `~/realtime/credentials/pixelplaza.env`; Redis-only env is `~/redis/pixelplaza.redis.env`. Redis project files follow `PROJECT.redis.env`, matching `schedsnap.redis.env`. The combined local backend file remains `.env.local`.
+On another PC, request/copy these credentials privately from the owner. They are not recoverable from Git. On the VM, private combined setup env is `~/realtime/credentials/pixelplaza.local.env`; realtime-only env is `~/realtime/credentials/pixelplaza.env`; Redis-only env is `~/redis/pixelplaza.redis.env`. Redis project files follow `PROJECT.redis.env`, matching `schedsnap.redis.env`. The combined local backend file is `backend/.env.local`. The deployed VM's runtime env remains at its existing location; reorganizing local files does not modify the VM.
 
 ## VM service management
 

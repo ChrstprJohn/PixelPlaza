@@ -11,11 +11,11 @@
     "frontend"
   ],
   "scripts": {
-    "dev:backend": "node --env-file=.env.local backend/src/index.js",
-    "test": "node --test backend/test/*.test.js",
-    "check:services": "node --env-file=.env.local scripts/check-services.js",
+    "dev:backend": "node --env-file=backend/.env.local backend/src/index.js",
+    "test": "node --test backend/test/*.test.js frontend/test/*.test.js",
+    "check:services": "node --env-file=backend/.env.local scripts/check-services.js",
     "dev:frontend": "npm run dev --workspace frontend",
     "build": "npm run build --workspace frontend",
-    "check:lobby": "node --env-file=.env.local scripts/check-lobby.js"
+    "check:lobby": "node --env-file=backend/.env.local scripts/check-lobby.js"
   }
 }

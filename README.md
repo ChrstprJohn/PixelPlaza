@@ -19,7 +19,16 @@ In a second foreground terminal, run `npm run dev:frontend`, then open **http://
 
 With both servers running, `npm run check:lobby` checks the real Redis/realtime lobby, temporary chat expiry and the 10-player cap using disposable guests. Stop both terminals with Ctrl+C when finished.
 
-The generated `.env.local` is already installed on the original development PC and is ignored by Git. On another machine, copy `.env.example` to `.env.local` and obtain PixelPlaza-specific keys privately. Never reuse SchedSnap or starter keys.
+Environment files live beside the app that uses them:
+
+| App | Local values (Git-ignored) | Template | Loaded by |
+| --- | --- | --- | --- |
+| Frontend | `frontend/.env.local` | `frontend/.env.example` | Vite / `npm run dev:frontend` / `npm run build` |
+| Backend | `backend/.env.local` | `backend/.env.example` | `npm run dev:backend`, `npm run check:services`, `npm run check:lobby` |
+
+There is no root `.env.local` or `.env.example`. Both local files are configured on the original development PC. On another machine, copy each workspace's example to its local file and obtain PixelPlaza-specific backend credentials privately. Never reuse SchedSnap or starter Redis/realtime keys. Only the public API URL and PostHog ingestion settings belong in the frontend or Vercel. Leave `VITE_API_BASE_URL` empty to use the local backend proxy; setting it to the deployed API URL sends gameplay requests to that API.
+
+Landing-page statistics are dynamic: total recorded production pageviews come from PostHog through the backend, active lobbies count open rooms, and active users sum current players. Lobby counts refresh every 15 seconds; visits refresh every minute using a five-minute backend cache. Unavailable values display an em dash. The visit query requires server-only `POSTHOG_PROJECT_ID`, `POSTHOG_PERSONAL_API_KEY` and `POSTHOG_API_HOST` settings; see the analytics guide.
 
 Backend health: `http://127.0.0.1:3001/health`. Run servers in the foreground and stop with Ctrl+C. `check:services` verifies Redis isolation and live WebSocket delivery using disposable, expiring test data; it requires internet access and running VM services.
 
@@ -29,6 +38,7 @@ Backend health: `http://127.0.0.1:3001/health`. Run servers in the foreground an
 - [Architecture and data flow](documentation/ARCHITECTURE.md)
 - [Technology choices](documentation/TECH_STACK.md)
 - [Local development and secrets](documentation/LOCAL_DEVELOPMENT.md)
+- [PostHog analytics setup and dashboard](documentation/posthog/README.md)
 - [Future deployment to the VM](documentation/VM_DEPLOYMENT.md)
 
 No PixelPlaza backend has been deployed to the VM yet. Documentation stays in this repository; the future backend directory is `~/apps/pixelplaza`. Chat keeps only the last 60 messages and expires after 15 minutes without a new message. A backend restart creates a fresh lobby; see [temporary storage rules](documentation/TEMPORARY_STORAGE.md).

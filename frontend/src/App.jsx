@@ -6,6 +6,8 @@ import Portrait from './Portrait.jsx';
 import { LOBBIES } from '../../shared/lobbies.js';
 import Music from './Music.jsx';
 import HeroTitle from './HeroTitle.jsx';
+import { trackEvent } from './analytics.js';
+import PlazaStats from './PlazaStats.jsx';
 const Game = lazy(() => import('./Game.jsx'));
 const gardenAvatars = [{ id: 'cat', name: 'Milo', color: '#c86135' }, { id: 'sprout', name: 'Fern', color: '#3f7952' }, { id: 'mushroom', name: 'Pip', color: '#c55042' }, { id: 'robot', name: 'Bolt', color: '#327090' }];
 function Brand({ onHome }) { return <a className="brand" href="#" onClick={event => { event.preventDefault(); onHome(); }} aria-label="PixelPlaza home"><svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M14 28V16H5V5h8v5h3V2h12v11H18v15z"/></svg><span>PixelPlaza</span></a>; }
@@ -28,6 +30,9 @@ export default function App() {
     return () => document.removeEventListener('pointerdown', closeOutside);
   }, [chatOpen]);
   const [lobbyId, setLobbyId] = useState('garden'), [lobbies, setLobbies] = useState([]), [roomsLoading, setRoomsLoading] = useState(true);
+  useEffect(() => {
+    trackEvent('plaza_screen_viewed', { screen: page, ...(['choose', 'lobby'].includes(page) ? { lobby_id: lobbyId } : {}) });
+  }, [page, lobbyId]);
   const avatars = lobbyId === 'haunted' ? [{ id: 'cat', name: 'Wisp', color: '#a993d0' }, { id: 'sprout', name: 'Gourd', color: '#c87532' }, { id: 'mushroom', name: 'Fang', color: '#9a74bc' }, { id: 'robot', name: 'Bones', color: '#4eafbc' }] : gardenAvatars;
   const selectedLobby = LOBBIES.find(room => room.id === lobbyId);
   const [transition, setTransition] = useState('');
@@ -56,15 +61,17 @@ export default function App() {
   function applyState(state) { if (state.revision >= revision.current) { revision.current = state.revision; setPlayers(state.players); } if (state.messages) setMessages(old => [...new Map([...state.messages, ...old.filter(m => m.at > (state.historyReadAt || Date.now()))].map(m => [m.id, m])).values()].sort((a, b) => a.at - b.at).slice(-60)); setDelayed(Boolean(state.realtimeDelayed)); }
   async function join(event) {
     event.preventDefault(); if (busy) return; setBusy(true); setError(''); setTransition('closing');
+    trackEvent('lobby_join_started', { lobby_id: lobbyId, character });
     try {
       const [result] = await Promise.all([api('/api/join', { body: { name, character, lobbyId } }), new Promise(resolve => setTimeout(resolve, 1100))]);
       revision.current = -1; setMessages(result.messages); applyState(result); setSession(result); setChatOpen(false); setPage('lobby');
-    } catch (e) { setError(e.message); setTransition(''); } finally { setBusy(false); }
+      trackEvent('lobby_join_succeeded', { lobby_id: lobbyId, character });
+    } catch (e) { trackEvent('lobby_join_failed', { lobby_id: lobbyId, character, error_type: e.network ? 'network' : e.status ? 'http' : 'unknown', http_status: e.status || 0 }); setError(e.message); setTransition(''); } finally { setBusy(false); }
   }
   async function leave() {
     if (leaveBusy.current) return; leaveBusy.current = true;
     const current = active.current;
-    if (current) { try { await api('/api/leave', { token: current.sessionToken, body: {} }); } catch { /* Heartbeat timeout releases the slot. */ } }
+    if (current) { try { await api('/api/leave', { token: current.sessionToken, body: {} }); } catch { /* Heartbeat timeout releases the slot. */ } trackEvent('lobby_left', { lobby_id: current.lobbyId || lobbyId }); }
     setSession(null); setPlayers([]); setMessages([]); setPage('rooms'); setError(''); leaveBusy.current = false;
   }
   function failure(e) { if (e.status === 401) { setSession(null); setPage('choose'); setError(e.message); } else if (e.status !== 429) setError(e.message); }
@@ -90,16 +97,17 @@ export default function App() {
   useEffect(() => { const unload = () => { const current = active.current; if (current) void fetch(apiUrl('/api/leave'), { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${current.sessionToken}` }, body: '{}', keepalive: true }).catch(() => {}); }; window.addEventListener('pagehide', unload); return () => window.removeEventListener('pagehide', unload); }, []);
   async function send(event) {
     event.preventDefault(); if (!draft.trim() || busy) return; setBusy(true); setError('');
-    try { const result = await api('/api/chat', { token: session.sessionToken, body: { text: draft } }); mergeMessages([result.message]); setDelayed(result.realtimeDelayed); setDraft(''); document.getElementById('chat-input')?.focus(); } catch (e) { failure(e); } finally { setBusy(false); }
+    try { const result = await api('/api/chat', { token: session.sessionToken, body: { text: draft } }); mergeMessages([result.message]); setDelayed(result.realtimeDelayed); setDraft(''); trackEvent('chat_message_sent', { lobby_id: session.lobbyId || lobbyId }); document.getElementById('chat-input')?.focus(); } catch (e) { failure(e); } finally { setBusy(false); }
   }
   function toggleChat() {
     const next = !chatOpen;
     setChatOpen(next);
+    if (next) trackEvent('chat_opened', { lobby_id: session.lobbyId || lobbyId });
     requestAnimationFrame(() => next ? document.getElementById('chat-input')?.focus() : document.querySelector('.game-canvas canvas')?.focus());
   }
   return <div className={`app ${page === 'lobby' ? 'in-lobby' : page === 'landing' ? 'on-landing' : ''}`}>
     {page === 'landing' && <PixelReveal/>}{page !== 'lobby' && <header className={`topbar ${page === 'landing' && landingScrolled ? 'is-scrolled' : ''}`}><Brand onHome={async () => { if (session) await leave(); setPage('landing'); setError(''); }} /></header>}
-    {page === 'landing' && <><main><section className="landing" aria-label="Welcome to PixelPlaza"><div className="landing-copy"><HeroTitle/><p>Pick a character, wander around, and say hello.</p><button className="button primary" onClick={() => { setRoomsLoading(true); setPage('rooms'); }}>Go to lobby <svg className="landing-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></button><div className="welcome-avatars" aria-hidden="true">{gardenAvatars.map(a => <Portrait key={a.id} character={a.id} animated/>)}</div></div></section><section className="plaza-stats" aria-label="Plaza activity"><dl><div><dt>Mock total visits</dt><dd>1,248</dd></div><div><dt>Mock active lobbies</dt><dd>1</dd></div><div><dt>Mock active users</dt><dd>7</dd></div></dl></section><section className="how-it-works" aria-labelledby="how-heading"><h2 id="how-heading">How it works</h2><ol className="plaza-steps"><li><img src="/assets/step-choose.png" alt="" width="320" height="320" loading="lazy"/><h3>Pick your little self.</h3><p>Choose a name and a character that feels like you.</p></li><li><img src="/assets/step-enter.png" alt="" width="320" height="320" loading="lazy"/><h3>Find your spot.</h3><p>Enter the shared plaza and wander with WASD or the arrow keys.</p></li><li><img src="/assets/step-chat.png" alt="" width="320" height="320" loading="lazy"/><h3>Say a little hello.</h3><p>Meet the other guests and send a message in the lobby chat.</p></li></ol></section></main><footer className="landing-footer"><Brand onHome={() => window.scrollTo({ top: 0, behavior: 'instant' })}/><span className="footer-credit">made by <strong>.dcd</strong></span></footer></>}
+    {page === 'landing' && <><main><section className="landing" aria-label="Welcome to PixelPlaza"><div className="landing-copy"><HeroTitle/><p>Pick a character, wander around, and say hello.</p><button className="button primary" onClick={() => { setRoomsLoading(true); setPage('rooms'); }}>Go to lobby <svg className="landing-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></button><div className="welcome-avatars" aria-hidden="true">{gardenAvatars.map(a => <Portrait key={a.id} character={a.id} animated/>)}</div></div></section><PlazaStats/><section className="how-it-works" aria-labelledby="how-heading"><h2 id="how-heading">How it works</h2><ol className="plaza-steps"><li><img src="/assets/step-choose.png" alt="" width="320" height="320" loading="lazy"/><h3>Pick your little self.</h3><p>Choose a name and a character that feels like you.</p></li><li><img src="/assets/step-enter.png" alt="" width="320" height="320" loading="lazy"/><h3>Find your spot.</h3><p>Enter the shared plaza and wander with WASD or the arrow keys.</p></li><li><img src="/assets/step-chat.png" alt="" width="320" height="320" loading="lazy"/><h3>Say a little hello.</h3><p>Meet the other guests and send a message in the lobby chat.</p></li></ol></section></main><footer className="landing-footer"><Brand onHome={() => window.scrollTo({ top: 0, behavior: 'instant' })}/><span className="footer-credit">made by <strong>.dcd</strong></span></footer></>}
     {page === 'choose' && <main className="choose-layout"><form className="join-form" onSubmit={join}><button type="button" className="text-button" onClick={() => { setPage('rooms'); setError(''); }}><svg className="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h14"/></svg>Change lobby</button><h1>Choose your avatar</h1><p>Enter your name and choose a character for {selectedLobby.name}.</p><label htmlFor="nickname">Your name</label><input id="nickname" value={name} onChange={e => setName(e.target.value)} minLength={2} maxLength={18} placeholder="What should we call you?" required autoComplete="nickname"/><fieldset><legend>Choose your character</legend><div className="character-grid">{avatars.map(a => <label key={a.id} className={`character-option ${character === a.id ? 'selected' : ''}`}><input type="radio" name="character" value={a.id} checked={character === a.id} onChange={() => setCharacter(a.id)}/><Portrait character={a.id} animated lobbyId={lobbyId}/><span>{a.name}</span></label>)}</div></fieldset>{error && <p role="alert" className="error">{error}</p>}<button className="button primary" disabled={busy || name.trim().length < 2 || roomsLoading || lobbies.find(room => room.id === lobbyId)?.closed || !lobbies.length || lobbies.find(room => room.id === lobbyId)?.full}>{busy ? 'Joining the plaza…' : 'Enter the plaza'}<svg className="join-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></button></form></main>}
     {page === 'rooms' && <main className="room-picker">
       <button className="text-button" onClick={() => { setPage('landing'); setError(''); }}><svg className="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h14"/></svg>Back to the plaza</button>

@@ -6,7 +6,7 @@ Open `/admin` on the frontend. It uses the existing cream, green, Nunito and Pix
 
 Set `ADMIN_PASSWORD` in the **backend** environment to a unique 16–256 character password. An optional `ADMIN_SESSION_SECRET` (at least 32 characters) supplies a separate signing key; otherwise the backend derives one from the password. Changing the password invalidates existing sessions. Restart the backend after changing environment variables.
 
-Local development uses the ignored root `.env.local`. A random local admin password has been added there for preview. Never place this password or the session secret in a `VITE_` variable or commit them.
+Local development uses the ignored `backend/.env.local`. The existing local admin password is stored there. Never place this password or the session secret in a frontend env file, a `VITE_` variable or Git.
 
 Sign-in creates an eight-hour signed HttpOnly, SameSite=Strict cookie. Production cookies require HTTPS. Password guesses are limited to ten attempts per minute across the backend process; all admin writes require an allowed website Origin and JSON. Admin routes use same-origin `/api/admin` requests; Vite proxies them locally, and `vercel.json` forwards them to the production API. This avoids depending on third-party cookies between Vercel and the API domain.
 
@@ -18,11 +18,13 @@ Sign-in creates an eight-hour signed HttpOnly, SameSite=Strict cookie. Productio
 
 Open/closed settings persist in Redis under `pixelplaza:admin:closed:<lobbyId>`. No chat contents, guest tokens or API credentials are returned in admin lists. Player positions and sessions retain their existing restart behavior.
 
-Analytics is an explicitly unconnected PostHog placeholder. No fake analytics or tracking SDK is included. Current player counts are available under Lobbies.
+The Analytics tab shows whether the current frontend build has a public PostHog token configured and links to the shared PostHog project. Public visits and lobby/chat usage are tagged `site_name = pixelplaza` and the Vite environment; filter both on production insights. Admin pages themselves do not initialize tracking. Reports open in PostHog rather than an embedded dashboard, and the configuration message does not verify live event delivery. Current player counts remain under Lobbies. See [PostHog setup and dashboard instructions](posthog/README.md).
 
 ## Deployment
 
-These changes are local until committed and deployed. Deploy both the backend and frontend, set `ADMIN_PASSWORD` in the VM backend environment, and ensure the exact frontend origin is in `FRONTEND_ORIGIN`. No VM changes were made during local implementation.
+Deployed on 2026-10-15: the VM backend runs application commit `0baafb1` from `main`; the frontend is deployed at `https://pixelplaza-live.vercel.app/admin`. The existing local backend `ADMIN_PASSWORD` from ignored `.env.local` was securely copied to private `~/apps/pixelplaza/.env.production` (mode 600). Its value is not recorded here. Compose loads that file through `env_file`; its explicit `HOST` and `PORT` overrides do not override the password. Recreate the backend after changing its environment. The exact frontend origin remains in `FRONTEND_ORIGIN`; Redis, realtime and admin secrets stay out of Vercel.
+
+Production checks passed: `/health` returns 200; `/api/admin/session` returns 200 with `configured:true` and `authenticated:false` on both the API hostname and Vercel rewrite. Unauthenticated GET and POST `/api/admin/lobbies` return 401 through both hostnames. Only the PixelPlaza backend was rebuilt/recreated; Redis data and other services were preserved. Production browser sign-in and management actions were not exercised during this deployment.
 
 ## Verification
 

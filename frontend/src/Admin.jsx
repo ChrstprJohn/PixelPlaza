@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Portrait from './Portrait.jsx';
 import './admin.css';
+import { analyticsEnabled } from './analytics.js';
 
 async function request(path, body) {
   let response;
@@ -75,7 +76,7 @@ export default function Admin() {
           {room.closed && <p className="admin-closed-note">New joins are paused. Players already inside can stay.</p>}
           {room.members.length ? <ul className="admin-members" aria-label={`${room.name} players`}>{room.members.map(player => <li key={player.id}><Portrait character={player.character} lobbyId={room.id}/><span className="admin-player-name">{player.name}</span>{confirm === player.id ? <div className="admin-remove-confirm"><span>Remove player?</span><button className="admin-remove" disabled={busy} onClick={() => manage(room, 'remove', player)}>Remove</button><button className="text-button" disabled={busy} onClick={() => setConfirm(null)}>Cancel</button></div> : <button className="admin-remove" disabled={busy} onClick={() => setConfirm(player.id)} aria-label={`Remove ${player.name} from ${room.name}`}>Remove</button>}</li>)}</ul> : <p className="admin-empty">No players in this lobby.</p>}
         </article>)}
-      </section> : <section className="admin-analytics" aria-labelledby="analytics-heading"><h2 id="analytics-heading">Analytics</h2><p>PostHog is not connected yet.</p><p>Page visits and activity reports will appear here after setup.</p><a href="#lobbies" onClick={event => { event.preventDefault(); setTab('lobbies'); }}>View live lobby counts</a></section>}
+      </section> : <section className="admin-analytics" aria-labelledby="analytics-heading"><h2 id="analytics-heading">Analytics</h2><p>{analyticsEnabled ? 'Usage tracking is configured for PixelPlaza.' : 'Usage tracking is not configured for this build.'}</p><p>View page visits, lobby joins and chat activity in PostHog. Live player counts are available under Lobbies.</p><a href="https://us.posthog.com/project/643035" target="_blank" rel="noopener noreferrer">Open PostHog</a></section>}
     </main>}
   </div>;
 }

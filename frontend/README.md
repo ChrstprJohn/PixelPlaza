@@ -2,9 +2,13 @@
 
 React/Vite frontend for the landing page, avatar picker, and multiplayer plaza.
 
+PostHog tracks anonymous visits and lobby/chat usage when `VITE_POSTHOG_TOKEN` is configured in `frontend/.env.local` or the hosting build environment. Set `VITE_POSTHOG_HOST` alongside it. Events use `site_name = pixelplaza` and the Vite mode as `environment`; session replay is off, clicks are masked, and guest names/chat contents are excluded. Admin pages do not initialize tracking. See [analytics setup, events and dashboard](../documentation/posthog/README.md).
+
 ## Local development
 
 From the repository root, run `npm run dev:frontend` and `npm run dev:backend`. Vite proxies `/api` requests to `http://127.0.0.1:3001` when `VITE_API_BASE_URL` is unset.
+
+Keep public frontend settings in `frontend/.env.local`, using `frontend/.env.example` as the template. Keep all backend credentials in `backend/.env.local`, using `backend/.env.example`. Root npm scripts load the backend file explicitly; Vite loads the frontend file automatically. No root env file is used. A nonempty `VITE_API_BASE_URL` directs gameplay requests to that server instead of the local proxy.
 
 ## Vercel
 

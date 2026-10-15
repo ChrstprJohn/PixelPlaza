@@ -1,8 +1,9 @@
 import { createServer } from 'node:http';
 import { ApiError } from './lobby.js';
 import { createAdmin } from './admin.js';
+import { createVisitsReader } from './visits.js';
 
-export function createBackend({ lobby, origins = ['http://localhost:5173', 'http://127.0.0.1:5173'], adminEnv = process.env, now = Date.now } = {}) {
+export function createBackend({ lobby, origins = ['http://localhost:5173', 'http://127.0.0.1:5173'], adminEnv = process.env, now = Date.now, readVisits = createVisitsReader() } = {}) {
   const allowed = new Set(origins);
   const admin = createAdmin({ lobby, env: adminEnv, now });
   return createServer(async (request, response) => {
@@ -20,6 +21,11 @@ export function createBackend({ lobby, origins = ['http://localhost:5173', 'http
     if (request.method === 'GET' && request.url === '/health') {
       response.end(JSON.stringify({ status: 'ok', service: 'pixelplaza-backend', stage: lobby ? 'playable-lobby' : 'initial-setup' }));
       return;
+    }
+    if (request.url === '/api/visits') {
+      if (request.method !== 'GET') { response.setHeader('Allow', 'GET'); return send(405, { visits: null }); }
+      const visits = await readVisits();
+      return send(visits === null ? 503 : 200, { visits });
     }
     if (!lobby) return send(404, { error: 'Not found' });
     const token = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.authorization || '')?.[1];

@@ -6,6 +6,7 @@
   "dependencies": {
     "centrifuge": "5.7.4",
     "phaser": "4.2.1",
+    "posthog-js": "1.435.8",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },

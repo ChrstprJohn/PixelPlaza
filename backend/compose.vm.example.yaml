@@ -6,7 +6,7 @@ services:
       dockerfile: backend/Dockerfile
     container_name: pixelplaza
     restart: unless-stopped
-    env_file: [.env.production]
+    env_file: [backend/.env.production]
     environment:
       HOST: 0.0.0.0
       PORT: '3001'
