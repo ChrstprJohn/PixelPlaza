@@ -2,7 +2,7 @@
 
 ## Current state
 
-The backend is deployed in Docker on the Azure VM from `~/apps/pixelplaza`, commit `307ca21`, but its `pixelplaza` container is currently stopped. Caddy still routes `https://pixelplaza-api.chrbuilds.dev` to it, so the API is unavailable until the container is started. Its DNS A record points to `74.176.65.214`. When running, `/health` returns 200 over HTTPS and `/` returns JSON `Not found` by design because this hostname serves the API, not a web page.
+The backend is deployed and running in Docker on the Azure VM from `~/apps/pixelplaza`, application commit `9cf7b3e`. Caddy serves `https://pixelplaza-api.chrbuilds.dev`; its DNS A record points to `74.176.65.214`. `/health` returns 200 over HTTPS, and public `GET /api/lobbies` lists the available plazas. The bare `/` path returns JSON `Not found` by design because this hostname serves the API, not a web page.
 
 The `pixelplaza` container is configured to join `app_network`, has no published host port, and has a 96 MiB memory limit. It uses the private `~/apps/pixelplaza/.env.production` file (mode 600). Its Redis/realtime credentials stay on the backend. The API allows the exact Vercel origin `https://pixelplaza-live.vercel.app`; both realtime origin allowlists include it too.
 
@@ -35,11 +35,12 @@ curl -fsS https://pixelplaza-api.chrbuilds.dev/health
 
 ## Start or stop the backend
 
-After SSHing into the VM, start the existing stopped container and check the health endpoint:
+After SSHing into the VM, start the existing container and check both endpoints:
 
 ```bash
 docker start pixelplaza
 curl -fsS https://pixelplaza-api.chrbuilds.dev/health
+curl -fsS https://pixelplaza-api.chrbuilds.dev/api/lobbies
 ```
 
 To stop only the PixelPlaza API again, run `docker stop pixelplaza`. This leaves Redis, realtime, and the other VM services running. Stopping the backend clears in-memory player positions; temporary chat remains in Redis until its 15-minute inactivity TTL expires.
