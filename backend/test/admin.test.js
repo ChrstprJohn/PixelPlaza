@@ -67,3 +67,36 @@ test('admin throttles password guesses', async t => {
     assert.equal(response.status, attempt < 10 ? 401 : 429);
   }
 });
+
+test('dashboard link is admin-only, validates PostHog URLs, and converts shared links to embeds', async t => {
+  const env = { ADMIN_PASSWORD: 'test-password-for-dashboard', POSTHOG_DASHBOARD_EMBED_URL: 'https://us.posthog.com/shared/test-dashboard-token', POSTHOG_PERSONAL_API_KEY: 'never-expose-query-key' };
+  const server = createBackend({ lobby: {}, adminEnv: env });
+  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}/api/admin/`;
+  const unauthorized = await fetch(base + 'dashboard');
+  assert.equal(unauthorized.status, 401);
+  assert.ok(!(await unauthorized.text()).includes('test-dashboard-token'));
+  const login = await fetch(base + 'login', { method: 'POST', headers: { Origin: 'http://localhost:5173', 'Content-Type': 'application/json' }, body: JSON.stringify({ password: env.ADMIN_PASSWORD }) });
+  const headers = { Cookie: login.headers.get('set-cookie').split(';')[0] };
+  const dashboard = await fetch(base + 'dashboard', { headers });
+  assert.equal(dashboard.status, 200);
+  assert.equal(dashboard.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(await dashboard.json(), { embedUrl: 'https://us.posthog.com/embedded/test-dashboard-token' });
+  env.POSTHOG_DASHBOARD_EMBED_URL = '';
+  assert.deepEqual(await (await fetch(base + 'dashboard', { headers })).json(), { embedUrl: '' });
+  for (const url of ['https://eu.posthog.com/embedded/test-token?theme=light', 'https://us.posthog.com/shared/another-token/']) {
+    env.POSTHOG_DASHBOARD_EMBED_URL = url;
+    const response = await fetch(base + 'dashboard', { headers });
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).embedUrl, url.replace('/shared/', '/embedded/'));
+  }
+  for (const url of ['http://us.posthog.com/shared/token', 'https://posthog.com.evil.example/shared/token', 'https://user:password@us.posthog.com/shared/token', 'https://us.posthog.com:8443/shared/token', 'https://us.posthog.com/project/643035/dashboard/1', 'https://us.posthog.com/shared/', 'javascript:alert(1)']) {
+    env.POSTHOG_DASHBOARD_EMBED_URL = url;
+    const response = await fetch(base + 'dashboard', { headers });
+    assert.equal(response.status, 503);
+    const text = await response.text();
+    assert.ok(!text.includes('never-expose-query-key'));
+    assert.ok(!text.includes(url));
+  }
+});

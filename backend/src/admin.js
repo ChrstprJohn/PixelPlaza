@@ -31,6 +31,17 @@ export function createAdmin({ lobby, env = process.env, now = Date.now }) {
       return send(200, { ok: true });
     }
     if (!authenticated(request)) throw new ApiError(401, 'Sign in to continue.');
+    if (request.method === 'GET' && request.url === '/api/admin/dashboard') {
+      const value = env.POSTHOG_DASHBOARD_EMBED_URL;
+      if (!value) return send(200, { embedUrl: '' });
+      try {
+        const url = new URL(value);
+        const posthogHost = url.hostname === 'posthog.com' || url.hostname.endsWith('.posthog.com');
+        if (url.protocol !== 'https:' || !posthogHost || url.username || url.password || url.port || !/^\/(shared|embedded)\/[^/]+\/?$/.test(url.pathname)) throw new Error('Invalid embed URL');
+        url.pathname = url.pathname.replace(/^\/shared\//, '/embedded/');
+        return send(200, { embedUrl: url.href });
+      } catch { throw new ApiError(503, 'Set a valid PostHog shared or embedded dashboard URL in the backend environment.'); }
+    }
     if (request.method === 'GET' && request.url === '/api/admin/lobbies') return send(200, { lobbies: await lobby.adminList() });
     if (request.method === 'POST' && request.url === '/api/admin/logout') {
       response.setHeader('Set-Cookie', cookie(''));

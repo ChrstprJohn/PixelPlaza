@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Portrait from './Portrait.jsx';
 import './admin.css';
-import { analyticsEnabled } from './analytics.js';
 
 async function request(path, body) {
   let response;
@@ -14,6 +13,37 @@ async function request(path, body) {
   return data;
 }
 const Arrow = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h14"/></svg>;
+
+function AnalyticsDashboard() {
+  const frame = useRef(null);
+  const [dashboard, setDashboard] = useState(null), [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0), [loaded, setLoaded] = useState(false), [height, setHeight] = useState(900);
+  useEffect(() => {
+    let disposed = false;
+    setDashboard(null); setError(''); setLoaded(false); setHeight(900);
+    request('dashboard').then(data => { if (!disposed) setDashboard(data); }).catch(error => { if (!disposed) setError(error.message); });
+    return () => { disposed = true; };
+  }, [attempt]);
+  const embedUrl = dashboard?.embedUrl;
+  useEffect(() => {
+    if (!embedUrl) return;
+    const origin = new URL(embedUrl).origin;
+    const resize = event => {
+      if (event.origin !== origin || event.source !== frame.current?.contentWindow || event.data?.event !== 'posthog:dimensions' || event.data.name !== 'PixelPlazaAnalytics') return;
+      const next = Number(event.data.height);
+      if (Number.isFinite(next) && next > 0 && next < 100000) setHeight(Math.ceil(next));
+    };
+    window.addEventListener('message', resize);
+    return () => window.removeEventListener('message', resize);
+  }, [embedUrl]);
+  return <section className="admin-dashboard" aria-labelledby="analytics-heading">
+    <h2 id="analytics-heading">Analytics</h2>
+    {error ? <div className="admin-analytics"><p className="error" role="alert">{error}</p><button className="text-button" onClick={() => setAttempt(value => value + 1)}>Retry analytics</button></div>
+      : !dashboard ? <p role="status">Loading analytics…</p>
+      : !embedUrl ? <div className="admin-analytics"><p>Connect your PixelPlaza dashboard to view analytics here.</p><p>Add its shared or embedded URL to the backend’s dashboard setting, then restart the backend.</p><a href="https://us.posthog.com/project/643035" target="_blank" rel="noopener noreferrer">Open PostHog</a></div>
+      : <><div className="admin-analytics-actions"><p>{loaded ? 'PixelPlaza dashboard' : 'Loading dashboard…'}</p><a href={embedUrl} target="_blank" rel="noopener noreferrer">Open dashboard in new tab</a></div><iframe ref={frame} key={attempt} name="PixelPlazaAnalytics" title="PixelPlaza PostHog analytics dashboard" className="admin-dashboard-frame" src={embedUrl} style={{ height }} onLoad={() => setLoaded(true)} referrerPolicy="no-referrer" scrolling="no" /></>}
+  </section>;
+}
 
 export default function Admin() {
   const [authenticated, setAuthenticated] = useState(false), [checking, setChecking] = useState(true), [configured, setConfigured] = useState(true);
@@ -76,7 +106,7 @@ export default function Admin() {
           {room.closed && <p className="admin-closed-note">New joins are paused. Players already inside can stay.</p>}
           {room.members.length ? <ul className="admin-members" aria-label={`${room.name} players`}>{room.members.map(player => <li key={player.id}><Portrait character={player.character} lobbyId={room.id}/><span className="admin-player-name">{player.name}</span>{confirm === player.id ? <div className="admin-remove-confirm"><span>Remove player?</span><button className="admin-remove" disabled={busy} onClick={() => manage(room, 'remove', player)}>Remove</button><button className="text-button" disabled={busy} onClick={() => setConfirm(null)}>Cancel</button></div> : <button className="admin-remove" disabled={busy} onClick={() => setConfirm(player.id)} aria-label={`Remove ${player.name} from ${room.name}`}>Remove</button>}</li>)}</ul> : <p className="admin-empty">No players in this lobby.</p>}
         </article>)}
-      </section> : <section className="admin-analytics" aria-labelledby="analytics-heading"><h2 id="analytics-heading">Analytics</h2><p>{analyticsEnabled ? 'Usage tracking is configured for PixelPlaza.' : 'Usage tracking is not configured for this build.'}</p><p>View page visits, lobby joins and chat activity in PostHog. Live player counts are available under Lobbies.</p><a href="https://us.posthog.com/project/643035" target="_blank" rel="noopener noreferrer">Open PostHog</a></section>}
+      </section> : <AnalyticsDashboard/>}
     </main>}
   </div>;
 }

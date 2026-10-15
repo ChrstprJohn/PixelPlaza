@@ -39,7 +39,7 @@ Every event also includes site/environment tags. `lobby_left` records the explic
 
 ## Dashboard and verification
 
-Use [the PixelPlaza dashboard prompt](DASHBOARD.md) in the shared project. The existing server-side query key returned HTTP 403 for dashboard listing, so a hosted PixelPlaza dashboard was not created by this change. No private query key is required for browser tracking. The admin Analytics tab links to the shared project; it does not embed a dashboard or claim events have been received.
+Use [the PixelPlaza dashboard prompt](DASHBOARD.md) to create or revise insights in the shared project. The owner supplied a shared PixelPlaza dashboard link, now configured locally for the admin Analytics iframe. The embed uses backend-only `POSTHOG_DASHBOARD_EMBED_URL`; it does not need a personal API key. See [the embedding guide](EMBED.md) for where to get the link, backend/production settings, admin access and responsive behavior. The separate read-only query key remains necessary for the landing-page total.
 
 ## Landing-page statistics
 

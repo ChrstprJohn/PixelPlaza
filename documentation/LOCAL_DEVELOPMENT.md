@@ -28,6 +28,7 @@ Visit `http://127.0.0.1:3001/health`. In another foreground terminal, run `npm r
 - `FRONTEND_ORIGIN=http://localhost:5173`: exact app origin validation. For local development the backend also accepts its equivalent `127.0.0.1` origin.
 - `LOBBY_PLAYER_LIMIT=10`: enforced lobby maximum; configurable between 1 and 10.
 - `POSTHOG_PROJECT_ID`, `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_API_HOST`: server-only read access for the landing-page production pageview total. These belong in `backend/.env.local`, never the frontend. See [counting and cache rules](posthog/README.md#landing-page-statistics).
+- `POSTHOG_DASHBOARD_EMBED_URL`: shared/embedded PixelPlaza dashboard URL, returned only to signed-in admins for the Analytics iframe. Backend only; see [the embedding guide](posthog/EMBED.md).
 
 Registered Centrifugo browser origins: `http://localhost:5173` and `http://127.0.0.1:5173`. Backend requests use project Bearer auth over the internet; they are not limited to Docker's internal network.
 
