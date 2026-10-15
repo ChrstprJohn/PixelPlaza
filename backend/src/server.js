@@ -1,8 +1,10 @@
 import { createServer } from 'node:http';
 import { ApiError } from './lobby.js';
+import { createAdmin } from './admin.js';
 
-export function createBackend({ lobby, origins = ['http://localhost:5173', 'http://127.0.0.1:5173'] } = {}) {
+export function createBackend({ lobby, origins = ['http://localhost:5173', 'http://127.0.0.1:5173'], adminEnv = process.env, now = Date.now } = {}) {
   const allowed = new Set(origins);
+  const admin = createAdmin({ lobby, env: adminEnv, now });
   return createServer(async (request, response) => {
     response.setHeader('Content-Type', 'application/json');
     response.setHeader('Cache-Control', 'no-store');
@@ -22,26 +24,34 @@ export function createBackend({ lobby, origins = ['http://localhost:5173', 'http
     if (!lobby) return send(404, { error: 'Not found' });
     const token = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.authorization || '')?.[1];
     try {
-      if (request.method === 'GET' && request.url === '/api/lobbies') return send(200, { lobbies: lobby.list() });
+      const readBody = async () => {
+        if (request.headers['content-type']?.split(';')[0].trim() !== 'application/json') throw new ApiError(415, 'Send JSON data.');
+        const raw = await new Promise((resolve, reject) => {
+          const chunks = []; let bytes = 0, tooLarge = false;
+          request.on('data', chunk => {
+            if (tooLarge) return;
+            bytes += chunk.length;
+            if (bytes > 4096) { tooLarge = true; reject(new ApiError(413, 'Request is too large.')); return; }
+            chunks.push(chunk);
+          });
+          request.on('end', () => { if (!tooLarge) resolve(Buffer.concat(chunks).toString('utf8')); });
+          request.on('error', reject);
+          request.on('aborted', () => reject(new ApiError(400, 'Request was interrupted.')));
+        });
+        let body;
+        try { body = JSON.parse(raw || '{}'); } catch { throw new ApiError(400, 'Invalid JSON.'); }
+        if (!body || typeof body !== 'object' || Array.isArray(body)) throw new ApiError(400, 'Invalid request.');
+        return body;
+      };
+      if (request.url.startsWith('/api/admin/')) {
+        if (request.method !== 'GET' && !allowed.has(origin)) throw new ApiError(403, 'Send admin changes from the PixelPlaza website.');
+        return await admin(request, response, send, readBody);
+      }
+      if (request.method === 'GET' && request.url === '/api/lobbies') { await lobby.ready?.(); return send(200, { lobbies: lobby.list() }); }
       if (request.method === 'GET' && request.url === '/api/lobby') return send(200, await lobby.read(token));
       const routes = ['/api/join', '/api/move', '/api/chat', '/api/heartbeat', '/api/token', '/api/leave'];
       if (request.method !== 'POST' || !routes.includes(request.url)) return send(404, { error: 'Not found' });
-      if (request.headers['content-type']?.split(';')[0].trim() !== 'application/json') throw new ApiError(415, 'Send JSON data.');
-      const raw = await new Promise((resolve, reject) => {
-        const chunks = []; let bytes = 0, tooLarge = false;
-        request.on('data', chunk => {
-          if (tooLarge) return;
-          bytes += chunk.length;
-          if (bytes > 4096) { tooLarge = true; reject(new ApiError(413, 'Request is too large.')); return; }
-          chunks.push(chunk);
-        });
-        request.on('end', () => { if (!tooLarge) resolve(Buffer.concat(chunks).toString('utf8')); });
-        request.on('error', reject);
-        request.on('aborted', () => reject(new ApiError(400, 'Request was interrupted.')));
-      });
-      let body;
-      try { body = JSON.parse(raw || '{}'); } catch { throw new ApiError(400, 'Invalid JSON.'); }
-      if (!body || typeof body !== 'object' || Array.isArray(body)) throw new ApiError(400, 'Invalid request.');
+      const body = await readBody();
       let result;
       if (request.url === '/api/join') result = await lobby.join(body, request.socket.remoteAddress || 'unknown');
       else if (request.url === '/api/move') result = await lobby.move(token, body);

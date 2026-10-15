@@ -48,3 +48,6 @@ Small rounded controls, clear field borders, restrained scene frame. Preserve cr
 Four character radios with visible selected/focus state. Chat supports loading/errors/empty state and wraps long text. Speech bubbles stay above the speaker for six seconds. Movement keys only act when the canvas is focused; touch controls act while held.
 ## Do's and Don'ts
 Use genuine generated raster assets from the approved reference. Do not substitute drawn scenery or add inventories/quests. Keep API keys outside frontend code. Respect reduced-motion preferences by removing avatar bounce.
+
+## Admin extension
+`/admin` retains the cream/cocoa/green palette and existing typefaces. Sign-in is a centered 400px form; management uses a 1080px content column, Lobbies/Analytics tabs, 112px room previews and inline player rows. Controls stack below the room heading under 600px. Admin headings use 28–52px Pixelify Sans; operational text uses 13–17px Nunito, with tabular counts. Room frames use 14px radii, previews 8px and password controls 6px. Red is reserved for removal and errors. No decorative effects or analytics mock charts.

@@ -1,0 +1,45 @@
+.admin-shell{min-height:100dvh;background:var(--color-bg)}
+.admin-header{height:88px;display:flex;align-items:center;justify-content:space-between;gap:24px;width:min(1200px,calc(100% - 48px));margin:auto;border-bottom:1px solid var(--color-line)}
+.admin-back{display:inline-flex;align-items:center;gap:8px;color:var(--color-muted);text-underline-offset:4px;font-size:15px}
+.admin-signin{min-height:calc(100dvh - 88px);display:grid;place-items:center;padding:48px 24px}
+.admin-signin form{width:min(100%,400px)}
+.admin-shell h1,.admin-shell h2{font-family:'Pixelify Sans',sans-serif;font-weight:600;line-height:1.1;text-wrap:balance}
+.admin-shell h1{font-size:clamp(36px,5vw,52px);margin:0 0 16px}
+.admin-signin p{color:var(--color-muted);margin:0 0 32px}
+.admin-signin label{display:block;font-weight:800;margin-bottom:8px}
+.admin-password{position:relative;margin-bottom:24px}
+.admin-password input{width:100%;padding-right:56px}
+.admin-password button{position:absolute;right:4px;top:4px;display:grid;place-items:center;min-width:44px;height:44px;border:0;background:none;color:var(--color-muted);border-radius:6px}
+.admin-signin .button{width:100%}
+.admin-shell .error{color:#a73029}
+.admin-main{width:min(1080px,calc(100% - 48px));margin:auto;padding:48px 0 72px}
+.admin-title{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:24px}
+.admin-title h1{margin:0}
+.admin-tabs{display:flex;gap:24px;border-bottom:1px solid var(--color-line)}
+.admin-tabs button{min-height:48px;padding:12px 2px;border:0;border-bottom:3px solid transparent;background:none;color:var(--color-muted);font-weight:800;font-size:17px}
+.admin-tabs button[aria-current]{border-bottom-color:var(--color-green);color:var(--color-green)}
+.admin-notice{min-height:24px;margin:16px 0;color:var(--color-green)}
+.admin-section-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;color:var(--color-muted)}
+.admin-section-heading p{margin:0;font-variant-numeric:tabular-nums}
+.admin-room{margin:0 0 24px;border:1px solid var(--color-line);border-radius:14px;overflow:hidden;background:#fffaf0}
+.admin-room-heading{display:flex;gap:20px;align-items:center;padding:24px}
+.admin-room-heading>img{object-fit:cover;border-radius:8px;image-rendering:pixelated;flex-shrink:0}
+.admin-room-heading>div{flex:1;min-width:0}
+.admin-room h2{font-size:28px;margin:0 0 10px}
+.admin-room-heading p{display:flex;align-items:center;gap:16px;margin:0;color:var(--color-muted);font-size:15px;font-variant-numeric:tabular-nums}
+.admin-status{font-weight:800;color:var(--color-green)}
+.admin-status.closed{color:#a73029}
+.admin-secondary{background:#eee4d0;color:var(--color-text)}
+.admin-secondary:hover:not(:disabled){background:#e1d2b6}
+.admin-empty,.admin-closed-note{margin:0;padding:0 24px 24px;color:var(--color-muted);font-size:15px}
+.admin-members{margin:0;padding:0 24px 16px;list-style:none}
+.admin-members li{display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 0}
+.admin-members .portrait{width:44px;height:44px;flex-shrink:0}
+.admin-player-name{flex:1;font-weight:800;overflow-wrap:anywhere;min-width:0}
+.admin-remove{border:0;background:none;color:#a73029;text-decoration:underline;text-underline-offset:4px;min-height:44px;padding:8px;font-weight:800}
+.admin-remove-confirm{display:flex;gap:12px;align-items:center;font-size:14px;flex-wrap:wrap}
+.admin-analytics{padding:32px 0;max-width:60ch}
+.admin-analytics h2{font-size:32px;margin:0 0 20px}
+.admin-analytics p{color:var(--color-muted)}
+.admin-analytics a{display:inline-block;color:var(--color-green);text-underline-offset:4px;min-height:44px;padding:12px 0;font-weight:800}
+@media(max-width:600px){.admin-header{width:calc(100% - 32px);height:72px;gap:16px}.admin-header .brand{font-size:25px;gap:8px}.admin-header .brand svg{width:24px;height:24px}.admin-back{font-size:13px;gap:4px}.admin-main{width:calc(100% - 32px);padding-top:32px}.admin-title{gap:12px}.admin-title h1{font-size:34px}.admin-room-heading{padding:16px;gap:12px;flex-wrap:wrap}.admin-room-heading>img{width:72px;height:72px}.admin-room h2{font-size:25px}.admin-room-heading p{gap:10px;font-size:13px}.admin-room-heading>.button{width:100%}.admin-empty,.admin-closed-note{padding:0 16px 20px}.admin-members{padding:0 16px 12px}.admin-members li{flex-wrap:wrap}.admin-remove-confirm{flex-basis:100%;justify-content:flex-end}.admin-section-heading{font-size:14px}.admin-signin{min-height:calc(100dvh - 72px)}}

@@ -77,6 +77,13 @@ export function createLobby({ services, limit = 10, now = Date.now, websocketUrl
   for (const timer of timers) timer.unref();
   return {
     state, advance, flush, channel,
+    async removePlayer(id) {
+      const player = [...players.values()].find(player => player.id === id && player.ready);
+      if (!player) throw new ApiError(404, 'Player already left.');
+      await remove(player);
+      await flush();
+      return { ok: true };
+    },
     owns: token => typeof token === 'string' && players.has(hash(token)),
     availability() {
       advance();
