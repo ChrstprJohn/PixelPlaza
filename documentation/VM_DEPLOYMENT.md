@@ -2,7 +2,7 @@
 
 ## Current state
 
-The backend is deployed and running in Docker on the Azure VM from `~/apps/pixelplaza`, application commit `0baafb1` on `main` (updated 2026-10-15). Caddy serves `https://pixelplaza-api.chrbuilds.dev`; its DNS A record points to `74.176.65.214`. `/health` returns 200 over HTTPS, and public `GET /api/lobbies` lists the available plazas. The bare `/` path returns JSON `Not found` by design because this hostname serves the API, not a web page.
+The backend is deployed and running in Docker on the Azure VM from `~/apps/pixelplaza`, application commit `594d005` on `main` (updated 2026-10-15). Caddy serves `https://pixelplaza-api.chrbuilds.dev`; its DNS A record points to `74.176.65.214`. `/health` returns 200 over HTTPS, public `GET /api/lobbies` lists the available plazas, and `GET /api/visits` returns the real PostHog pageview aggregate. The bare `/` path returns JSON `Not found` by design because this hostname serves the API, not a web page.
 
 The `pixelplaza` container is configured to join `app_network`, has no published host port, and has a 96 MiB memory limit. It uses the private `~/apps/pixelplaza/.env.production` file (mode 600). Its Redis/realtime credentials stay on the backend. The API allows the exact Vercel origin `https://pixelplaza-live.vercel.app`; both realtime origin allowlists include it too.
 
@@ -18,7 +18,9 @@ VITE_API_BASE_URL=https://pixelplaza-api.chrbuilds.dev
 
 Never add admin, Redis or realtime secrets to Vercel frontend variables. Only public frontend settings belong there: `VITE_API_BASE_URL`, `VITE_POSTHOG_TOKEN` and `VITE_POSTHOG_HOST`. See [the PostHog guide](posthog/README.md) for the analytics values.
 
-To enable the new landing-page visit total after deploying this source, add backend-only `POSTHOG_PROJECT_ID`, `POSTHOG_PERSONAL_API_KEY` (read-only `query:read`) and `POSTHOG_API_HOST` to the VM's private runtime env, then recreate only the PixelPlaza backend. Never place the personal key in Vercel or a `VITE_` variable. `/api/visits` returns the cached aggregate; active lobby/player totals use the existing `/api/lobbies` endpoint. These stats changes and private query settings have been verified locally but have not been deployed to the VM in this work.
+Backend-only `POSTHOG_PROJECT_ID`, `POSTHOG_PERSONAL_API_KEY` (read-only `query:read`) and `POSTHOG_API_HOST` are configured in the VM's existing private `~/apps/pixelplaza/.env.production` (mode 600). Never place the personal key in Vercel or a `VITE_` variable. `/api/visits` returns the cached aggregate; active lobby/player totals use the existing `/api/lobbies` endpoint.
+
+Stats deployment verified on 2026-10-15: the previously missing visit route returned 404 because the VM was still running `0baafb1`. After explicit approval, the clean `main` checkout was fast-forwarded to `594d005`, the three private query settings were securely added to the existing production env, and only `pixelplaza` was rebuilt/recreated. Admin credentials, existing Compose/env paths, networks and Redis data were preserved; all unrelated running container IDs were unchanged. Both the API and Vercel `/api/visits` routes returned HTTP 200 with `{ "visits": 29 }` at verification time. Headless Edge confirmed the live landing page displayed 29 total visits, 1 open lobby and 0 active users on desktop/mobile layouts. These values are snapshots, not fixed counts. Admin session checks still reported `configured:true` and `authenticated:false`.
 
 ## Update the VM backend
 

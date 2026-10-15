@@ -41,4 +41,4 @@ Backend health: `http://127.0.0.1:3001/health`. Run servers in the foreground an
 - [PostHog analytics setup and dashboard](documentation/posthog/README.md)
 - [Future deployment to the VM](documentation/VM_DEPLOYMENT.md)
 
-No PixelPlaza backend has been deployed to the VM yet. Documentation stays in this repository; the future backend directory is `~/apps/pixelplaza`. Chat keeps only the last 60 messages and expires after 15 minutes without a new message. A backend restart creates a fresh lobby; see [temporary storage rules](documentation/TEMPORARY_STORAGE.md).
+The PixelPlaza backend is deployed at `~/apps/pixelplaza` and serves `https://pixelplaza-api.chrbuilds.dev`, including the real PostHog visit aggregate. See the deployment guide for current application commit and verification details. Chat keeps only the last 60 messages and expires after 15 minutes without a new message. A backend restart creates a fresh lobby; see [temporary storage rules](documentation/TEMPORARY_STORAGE.md).
