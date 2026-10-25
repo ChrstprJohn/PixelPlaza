@@ -1,5 +1,7 @@
 # PixelPlaza admin
 
+Current 2026-10-25 verification: the API admin auth boundary still rejects unauthorized calls, but Vercel same-origin admin rewrites receive Cloudflare challenge 403. Historical browser/admin checks below predate that issue. See [the proxy follow-up](VERCEL_PROXY_FOLLOWUP.md).
+
 Open `/admin` on the frontend. It uses the existing cream, green, Nunito and Pixelify Sans styling, with a simple sign-in form and Lobbies / Analytics navigation.
 
 ## Sign in

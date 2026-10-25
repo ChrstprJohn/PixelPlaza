@@ -6,8 +6,8 @@ Seven backend tests, the production frontend build, and the live VM lobby integr
 
 Run commands from the repository root with Node 22.12+ (24 recommended).
 
-The VM-loopback listener is configured and verified as of 2026-10-25; the production PixelPlaza application cutover is still pending.
-The owner opened the SSH tunnel and confirmed health OK. On 2026-10-25 both `npm run check:services` and `npm run check:lobby` passed, including token issuance through SSH, public WebSocket event delivery, chat/movement, Redis TTL, forged-session rejection and the 10-player cap. Local ignored backend env now uses `REALTIME_API_URL=http://127.0.0.1:4300`, and frontend `VITE_API_BASE_URL` is empty; credentials were preserved. The temporary test backend was stopped. Keep the tunnel open while developing; owner browser gameplay and production cutover remain pending. `npm test` uses
+The VM-loopback listener is configured and verified as of 2026-10-25; the production PixelPlaza private API cutover is complete.
+The owner opened the SSH tunnel and confirmed health OK. On 2026-10-25 both `npm run check:services` and `npm run check:lobby` passed, including token issuance through SSH, public WebSocket event delivery, chat/movement, Redis TTL, forged-session rejection and the 10-player cap. Local ignored backend env now uses `REALTIME_API_URL=http://127.0.0.1:4300`, and frontend `VITE_API_BASE_URL` is empty; credentials were preserved. The temporary test backend was stopped. Keep the tunnel open while developing; the owner confirmed local browser gameplay and authorized the completed production cutover. The public realtime API is closed; local development continues to require this tunnel. `npm test` uses
 local test doubles and does not require a tunnel or VM credentials.
 
 ```powershell
