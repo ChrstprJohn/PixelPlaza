@@ -12,7 +12,7 @@ Browser on localhost:5173 (React + Phaser)
 
 The browser never calls Redis or receives private project API keys. The local backend uses the ignored `backend/.env.local`; Vite reads only public `VITE_` settings from `frontend/.env.local`. VM Redis and realtime are shared with other projects but PixelPlaza has its own credentials, key patterns and channel prefix.
 
-The tunnel/private transport above is prepared in source and awaits VM setup and local verification. In production the backend will call `http://realtime-server:3000` directly on `app_network`; local development will use `http://127.0.0.1:4300` through SSH. The browser WebSocket stays public and Cloudflare-proxied. The realtime container API port remains private, with only a VM-loopback listener for SSH. Closing Caddy's public `/backend` route is a separate, pending VM change; merely changing the backend URL does not close that route.
+The private transport is prepared in source and the VM-loopback listener is configured. The owner-opened laptop tunnel/local verification and production application cutover remain pending. In production the backend will call `http://realtime-server:3000` directly on `app_network`; local development will use `http://127.0.0.1:4300` through SSH. The browser WebSocket stays public and Cloudflare-proxied. The realtime container API port remains private, with only a VM-loopback listener for SSH. Closing Caddy's public `/backend` route is a separate, pending VM change; merely changing the backend URL does not close that route.
 
 ## Implemented player flow
 

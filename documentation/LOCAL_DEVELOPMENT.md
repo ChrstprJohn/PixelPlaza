@@ -6,7 +6,7 @@ Seven backend tests, the production frontend build, and the live VM lobby integr
 
 Run commands from the repository root with Node 22.12+ (24 recommended).
 
-The private realtime connection is prepared in source but has not been deployed to the VM.
+The VM-loopback listener is configured and verified as of 2026-10-25; the production PixelPlaza application cutover is still pending.
 The SSH tunnel will be set up interactively with the owner later; do not run the live
 service checks until that setup is complete and the tunnel is open. `npm test` uses
 local test doubles and does not require a tunnel or VM credentials.
@@ -37,11 +37,11 @@ Visit `http://127.0.0.1:3001/health`. In another foreground terminal, run `npm r
 
 Registered Centrifugo browser origins: `http://localhost:5173` and `http://127.0.0.1:5173`. Backend requests still require project Bearer auth. Local development will reach the private realtime API through SSH; the deployed backend will reach it over `app_network`. Browsers continue to use the public `wss://realtime.chrbuilds.dev/connection/websocket` endpoint through Cloudflare. No realtime secret goes into a browser variable.
 
-## SSH tunnel workflow (pending VM setup)
+## SSH tunnel workflow
 
-The VM must first have a loopback-only port `127.0.0.1:4300` forwarded to the realtime API container's port 3000. The prepared `backend/realtime-tunnel.override.example.yaml` is for that future configuration; it does not expose the service on the VM's public interface. See [the deployment plan](VM_DEPLOYMENT.md#private-realtime-migration-prepared-not-deployed).
+The VM now has loopback-only `127.0.0.1:4300` forwarded to the realtime API container's port 3000 in existing `~/realtime/server/docker-compose.yml` (project `server`). Its health/authentication and private Docker token/publish checks passed. `backend/realtime-tunnel.override.example.yaml` is a reference for new setups; do not apply it again to the configured service and duplicate the port. The laptop tunnel and local integration checks remain pending. See [the deployment plan](VM_DEPLOYMENT.md#private-realtime-migration).
 
-Once that listener has been configured, the owner will run the following in a separate PowerShell window and leave it open:
+With the VM listener ready, the owner will run the following in a separate PowerShell window and leave it open:
 
 ```powershell
 ssh -N -T -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=yes -i C:\Users\picar\Desktop\azure_vm\n8n-vm_key.pem -o UserKnownHostsFile=C:\Users\picar\Desktop\azure_vm\known_hosts -L 127.0.0.1:4300:127.0.0.1:4300 azureuser@74.176.65.214
