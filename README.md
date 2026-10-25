@@ -8,7 +8,7 @@ The local prototype is playable: landing page, guest name/character picker, walk
 
 Requires Node.js 22.12+ (Node 24 recommended) and npm. From the repository root:
 
-Private realtime support is prepared and the VM-loopback listener is configured. Local development now needs an owner-opened SSH tunnel and `REALTIME_API_URL=http://127.0.0.1:4300`; follow [the tunnel workflow](documentation/LOCAL_DEVELOPMENT.md#ssh-tunnel-workflow) before running live service/lobby checks. Unit tests do not require the tunnel. Existing ignored local env files have not been modified by this change.
+Private realtime support is prepared and the VM-loopback listener is configured. Local development now needs an owner-opened SSH tunnel and `REALTIME_API_URL=http://127.0.0.1:4300`; follow [the tunnel workflow](documentation/LOCAL_DEVELOPMENT.md#ssh-tunnel-workflow) before running live service/lobby checks. Unit tests do not require the tunnel. On the original development PC these ignored local env values are now configured and service/lobby checks passed through the owner-opened tunnel. Credentials were preserved; no private values are committed. Keep the tunnel open while developing. Owner browser gameplay and final VM cutover remain pending.
 
 ```powershell
 npm install

@@ -1,14 +1,13 @@
 # Local development
 
-## Verified prototype and known limitation
+## Earlier prototype checks and known limitation
 
 Seven backend tests, the production frontend build, and the live VM lobby integration check pass. Desktop/mobile browser checks exercised joining, movement, chat and speech bubbles. The Windows Vite dev process nevertheless exited with native status `3221226505` after browser testing, including with Vite 7; the toolchain pin does not resolve that runtime issue. Restart the frontend when needed. Long-running dev-server stability and sustained multiplayer load remain unverified. Frontend visual polish is deferred at the user's request.
 
 Run commands from the repository root with Node 22.12+ (24 recommended).
 
 The VM-loopback listener is configured and verified as of 2026-10-25; the production PixelPlaza application cutover is still pending.
-The SSH tunnel will be set up interactively with the owner later; do not run the live
-service checks until that setup is complete and the tunnel is open. `npm test` uses
+The owner opened the SSH tunnel and confirmed health OK. On 2026-10-25 both `npm run check:services` and `npm run check:lobby` passed, including token issuance through SSH, public WebSocket event delivery, chat/movement, Redis TTL, forged-session rejection and the 10-player cap. Local ignored backend env now uses `REALTIME_API_URL=http://127.0.0.1:4300`, and frontend `VITE_API_BASE_URL` is empty; credentials were preserved. The temporary test backend was stopped. Keep the tunnel open while developing; owner browser gameplay and production cutover remain pending. `npm test` uses
 local test doubles and does not require a tunnel or VM credentials.
 
 ```powershell
@@ -39,7 +38,7 @@ Registered Centrifugo browser origins: `http://localhost:5173` and `http://127.0
 
 ## SSH tunnel workflow
 
-The VM now has loopback-only `127.0.0.1:4300` forwarded to the realtime API container's port 3000 in existing `~/realtime/server/docker-compose.yml` (project `server`). Its health/authentication and private Docker token/publish checks passed. `backend/realtime-tunnel.override.example.yaml` is a reference for new setups; do not apply it again to the configured service and duplicate the port. The laptop tunnel and local integration checks remain pending. See [the deployment plan](VM_DEPLOYMENT.md#private-realtime-migration).
+The VM now has loopback-only `127.0.0.1:4300` forwarded to the realtime API container's port 3000 in existing `~/realtime/server/docker-compose.yml` (project `server`). Its health/authentication and private Docker token/publish checks passed. `backend/realtime-tunnel.override.example.yaml` is a reference for new setups; do not apply it again to the configured service and duplicate the port. The laptop tunnel and local automated integration checks passed on 2026-10-25. Keep the tunnel open or reopen it for a later session. See [the deployment plan](VM_DEPLOYMENT.md#private-realtime-migration).
 
 With the VM listener ready, the owner will run the following in a separate PowerShell window and leave it open:
 
