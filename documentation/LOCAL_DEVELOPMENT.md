@@ -6,6 +6,11 @@ Seven backend tests, the production frontend build, and the live VM lobby integr
 
 Run commands from the repository root with Node 22.12+ (24 recommended).
 
+The private realtime connection is prepared in source but has not been deployed to the VM.
+The SSH tunnel will be set up interactively with the owner later; do not run the live
+service checks until that setup is complete and the tunnel is open. `npm test` uses
+local test doubles and does not require a tunnel or VM credentials.
+
 ```powershell
 npm install
 npm test
@@ -22,7 +27,7 @@ Visit `http://127.0.0.1:3001/health`. In another foreground terminal, run `npm r
 `frontend/.env.local` contains only public `VITE_` settings: `VITE_API_BASE_URL`, `VITE_POSTHOG_TOKEN` and `VITE_POSTHOG_HOST`. Vite loads it automatically from the frontend workspace. Copy `frontend/.env.example` there on a new machine. Leave the API base URL empty for the local proxy, or set the public deployed API origin to use that server. Vercel takes these same frontend variables from its build settings. Both examples contain placeholders for credentials; local files are Git-ignored. There are no env files at the repository root.
 
 - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`: your own VM gateway, using the familiar Upstash-compatible protocol. The Redis ACL restricts this token to `pixelplaza:*` and session/rate-limit commands.
-- `REALTIME_API_URL`, `REALTIME_API_KEY`: server-only project API access.
+- `REALTIME_API_URL=http://127.0.0.1:4300`, `REALTIME_API_KEY`: server-only project API access through the SSH tunnel. Docker production uses `http://realtime-server:3000`. These private URLs have no `/backend` suffix.
 - `REALTIME_PROJECT_ID=pixelplaza`: project boundary; channels begin `pixelplaza/`.
 - `REALTIME_WEBSOCKET_URL`: public URL; the frontend can know it.
 - `FRONTEND_ORIGIN=http://localhost:5173`: exact app origin validation. For local development the backend also accepts its equivalent `127.0.0.1` origin.
@@ -30,7 +35,23 @@ Visit `http://127.0.0.1:3001/health`. In another foreground terminal, run `npm r
 - `POSTHOG_PROJECT_ID`, `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_API_HOST`: server-only read access for the landing-page production pageview total. These belong in `backend/.env.local`, never the frontend. See [counting and cache rules](posthog/README.md#landing-page-statistics).
 - `POSTHOG_DASHBOARD_EMBED_URL`: shared/embedded PixelPlaza dashboard URL, returned only to signed-in admins for the Analytics iframe. Backend only; see [the embedding guide](posthog/EMBED.md).
 
-Registered Centrifugo browser origins: `http://localhost:5173` and `http://127.0.0.1:5173`. Backend requests use project Bearer auth over the internet; they are not limited to Docker's internal network.
+Registered Centrifugo browser origins: `http://localhost:5173` and `http://127.0.0.1:5173`. Backend requests still require project Bearer auth. Local development will reach the private realtime API through SSH; the deployed backend will reach it over `app_network`. Browsers continue to use the public `wss://realtime.chrbuilds.dev/connection/websocket` endpoint through Cloudflare. No realtime secret goes into a browser variable.
+
+## SSH tunnel workflow (pending VM setup)
+
+The VM must first have a loopback-only port `127.0.0.1:4300` forwarded to the realtime API container's port 3000. The prepared `backend/realtime-tunnel.override.example.yaml` is for that future configuration; it does not expose the service on the VM's public interface. See [the deployment plan](VM_DEPLOYMENT.md#private-realtime-migration-prepared-not-deployed).
+
+Once that listener has been configured, the owner will run the following in a separate PowerShell window and leave it open:
+
+```powershell
+ssh -N -T -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=yes -i C:\Users\picar\Desktop\azure_vm\n8n-vm_key.pem -o UserKnownHostsFile=C:\Users\picar\Desktop\azure_vm\known_hosts -L 127.0.0.1:4300:127.0.0.1:4300 azureuser@74.176.65.214
+```
+
+This binds port 4300 only on the PC's loopback interface. A successful `-N` session normally stays quiet; keep it open while developing and press Ctrl+C to close it. `ExitOnForwardFailure` catches a local port bind failure; it does not prove the VM listener is running. The later service check verifies the complete path.
+
+At that stage set only `REALTIME_API_URL=http://127.0.0.1:4300` in ignored `backend/.env.local`, preserving all existing secrets. Set `VITE_API_BASE_URL` empty in `frontend/.env.local` to use the local backend. Keep `REALTIME_WEBSOCKET_URL` at the public WSS address. Restart the local backend after changing its env file. Then run `npm run check:services`, followed by the local backend/frontend and `npm run check:lobby`. If the tunnel closes, realtime token/publish requests fail until it is reopened; never disable TLS verification to work around this.
+
+Local lobby instances already generate random realtime channels and Redis session/chat prefixes, so local gameplay uses different instances from the deployed backend. This is not full environment isolation: the same project credentials share service quotas, and Redis `pixelplaza:admin:closed:*` settings are shared. Do not test admin lobby open/close actions with production Redis credentials. A fully isolated development project needs separate Redis/realtime credentials and application namespace support; that is not part of this transport fix.
 
 On another PC, request/copy these credentials privately from the owner. They are not recoverable from Git. On the VM, private combined setup env is `~/realtime/credentials/pixelplaza.local.env`; realtime-only env is `~/realtime/credentials/pixelplaza.env`; Redis-only env is `~/redis/pixelplaza.redis.env`. Redis project files follow `PROJECT.redis.env`, matching `schedsnap.redis.env`. The combined local backend file is `backend/.env.local`. The deployed VM's runtime env remains at its existing location; reorganizing local files does not modify the VM.
 

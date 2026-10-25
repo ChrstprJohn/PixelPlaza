@@ -1,0 +1,7 @@
+# Future VM configuration only: merge with the EXISTING realtime-server Compose file,
+# never with PixelPlaza's Compose file. Confirm its project name/path before applying.
+# SSH forwards to this VM-loopback listener; no public Docker port is opened.
+services:
+  realtime-server:
+    ports:
+      - '127.0.0.1:4300:3000'

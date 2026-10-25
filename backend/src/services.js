@@ -4,15 +4,19 @@ const required = (env, name) => {
   return value;
 };
 
-function httpsUrl(env, name) {
+function serviceUrl(env, name, privateRealtime = false) {
   const url = new URL(required(env, name));
-  if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) throw new Error(`Invalid ${name}`);
+  // HTTP stays inside Docker or the local end of an encrypted SSH tunnel.
+  const privateHttp = privateRealtime && url.protocol === 'http:' && url.pathname === '/' &&
+    (['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) ||
+      (url.hostname === 'realtime-server' && url.port === '3000'));
+  if ((url.protocol !== 'https:' && !privateHttp) || url.username || url.password || url.search || url.hash) throw new Error(`Invalid ${name}`);
   return url.toString().replace(/\/$/, '');
 }
 
 export function createServices(env = process.env, fetcher = fetch) {
-  const redisUrl = httpsUrl(env, 'UPSTASH_REDIS_REST_URL');
-  const realtimeUrl = httpsUrl(env, 'REALTIME_API_URL');
+  const redisUrl = serviceUrl(env, 'UPSTASH_REDIS_REST_URL');
+  const realtimeUrl = serviceUrl(env, 'REALTIME_API_URL', true);
   const redisToken = required(env, 'UPSTASH_REDIS_REST_TOKEN');
   const realtimeKey = required(env, 'REALTIME_API_KEY');
   const project = required(env, 'REALTIME_PROJECT_ID');

@@ -10,6 +10,8 @@ services:
     environment:
       HOST: 0.0.0.0
       PORT: '3001'
+      # Same private Docker network as realtime-server; browsers still use public WSS.
+      REALTIME_API_URL: http://realtime-server:3000
     mem_limit: 96m
     networks: [app_network]
     security_opt: [no-new-privileges:true]

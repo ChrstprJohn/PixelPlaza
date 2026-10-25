@@ -36,6 +36,25 @@ test('service helpers reject wrong projects and upstream errors', async () => {
   await assert.rejects(broken.redis(['PING']));
 });
 
+test('private realtime calls support Docker and SSH loopback without permitting public plaintext credentials', async () => {
+  const env = { UPSTASH_REDIS_REST_URL: 'https://redis.example.com', UPSTASH_REDIS_REST_TOKEN: 'redis-key', REALTIME_API_KEY: 'realtime-key', REALTIME_PROJECT_ID: 'pixelplaza' };
+  for (const base of ['http://realtime-server:3000', 'http://127.0.0.1:4300', 'http://localhost:4300', 'http://[::1]:4300']) {
+    const calls = [];
+    const services = createServices({ ...env, REALTIME_API_URL: base + '/' }, async (url, options) => {
+      calls.push({ url, options });
+      return { ok: true, json: async () => url.endsWith('/token') ? { token: 'jwt' } : { success: true } };
+    });
+    await services.token('guest', ['pixelplaza/lobby/test']);
+    await services.publish('pixelplaza/lobby/test', { type: 'test' });
+    assert.deepEqual(calls.map(call => call.url), [base + '/token', base + '/publish']);
+    assert.ok(calls.every(call => call.options.headers.Authorization === 'Bearer realtime-key' && call.options.redirect === 'error'));
+  }
+  for (const url of ['http://realtime.example.com', 'http://realtime-server:3001', 'http://realtime-server.example.com:3000', 'http://localhost.example.com:4300', 'http://127.0.0.1:4300/backend', 'http://user:secret@localhost:4300', 'http://localhost:4300?key=secret', 'http://localhost:4300#secret', 'ftp://localhost:4300', 'https://user:secret@realtime.example.com']) {
+    assert.throws(() => createServices({ ...env, REALTIME_API_URL: url }), /Invalid REALTIME_API_URL/);
+  }
+  assert.throws(() => createServices({ ...env, REALTIME_API_URL: 'http://localhost:4300', UPSTASH_REDIS_REST_URL: 'http://localhost:4301' }), /Invalid UPSTASH_REDIS_REST_URL/);
+});
+
 test('HTTP routes reject untrusted origins, missing sessions, malformed JSON and oversized bodies', async () => {
   const lobby = { read: async token => { if (!token) { const { ApiError } = await import('../src/lobby.js'); throw new ApiError(401, 'Join first'); } return {}; }, join: async () => ({ ok: true }) };
   const server = createBackend({ lobby });

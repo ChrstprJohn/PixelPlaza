@@ -8,6 +8,24 @@ The `pixelplaza` container is configured to join `app_network`, has no published
 
 Local env files are now separated into `backend/.env.local` and `frontend/.env.local`, with matching workspace examples. The repository's Compose template now expects `backend/.env.production` for new deployments. The existing VM `compose.vm.yaml` and its root `.env.production` have not been changed. Before replacing that installed Compose file with the updated template, move its production env to `~/apps/pixelplaza/backend/.env.production` and preserve mode 600. Ordinary source-only updates can keep the installed Compose/env paths.
 
+## Private realtime migration (prepared, not deployed)
+
+The 2026-10-25 check confirmed the realtime service is healthy at the origin, but Cloudflare Bot Fight Mode challenges PixelPlaza's server-to-server token request with HTTP 403. The code now supports authenticated realtime API calls over the private Docker network and through an SSH tunnel for local development. This source change does not change the running VM, Caddy routes, DNS, Bot Fight Mode, or existing ignored env files. The current public `/backend` route has not yet been closed.
+
+The owner requested this order: prepare/commit/push code first; guide the owner through SSH tunnel setup and local integration checks next; pull/rebuild PixelPlaza on the VM last. Do not treat the normal update commands below as a migration procedure. Final deployment is gated on successful tunnel/local checks.
+
+The later migration must:
+
+1. Inspect the current realtime Compose project, Caddy configuration and Docker network membership. Keep service paths, secrets, mounts and named volumes intact. Audit other registered projects before closing the shared public `/backend` route; remote backends will need private connectivity too.
+2. Configure only a VM-loopback listener `127.0.0.1:4300` to realtime-server port 3000. `backend/realtime-tunnel.override.example.yaml` is a prepared override for the existing realtime-server Compose project, not the PixelPlaza project. Review the combined configuration without displaying expanded secrets. This enables the owner-operated SSH tunnel; no public port 3000 or 4300 should be allowed in Azure or the VM firewall.
+3. Guide the owner to open the [SSH tunnel](LOCAL_DEVELOPMENT.md#ssh-tunnel-workflow-pending-vm-setup), update the local ignored realtime URL, and verify authenticated token issuance, public WebSocket connectivity and event delivery using `npm run check:services`. Then exercise the local lobby. Public browser WebSocket challenges, if any, must be investigated separately; the private route only resolves the confirmed backend request failure.
+4. Only after those checks, pull the pushed source and configure the existing PixelPlaza Compose service with `REALTIME_API_URL: http://realtime-server:3000` in `environment`. The checked-in new-deployment template includes this override. Preserve the installed root `.env.production` path; do not replace the installed Compose file wholesale with the template or print its resolved credentials. Internal API routes are `/token` and `/publish`, so the URL must not include `/backend`.
+5. Rebuild/recreate only PixelPlaza. Check API health, lobby joins, token refresh, chat and event publishing before closing the public realtime API route. Restarting PixelPlaza clears its in-memory lobby and players must rejoin. Keep a rollback to the existing Compose/env values and previous app revision until verified.
+6. Remove the public realtime `/backend` proxy route from Caddy while preserving the public `/connection/websocket` route and unrelated sites. Validate Caddy configuration before reloading. Confirm `/backend/health`, `/backend/token` and `/backend/publish` are unavailable at the origin and public hostname, internal authenticated requests still work, unauthenticated internal requests fail, and the public WebSocket can connect and receive events. Check that port 4300 listens only on loopback and there are no public container ports.
+7. Update these deployment records and the maintained local `azure_vm` service/infrastructure guides to the actual deployed state in that task. Do not upload documentation copies to the VM.
+
+Both public hostnames stay Cloudflare-proxied and Bot Fight Mode stays enabled. Redis remains on its existing HTTPS gateway and credentials. SSH login remains the access boundary for local development. The backend URL validator permits HTTP only on loopback addresses at a root path or exactly `realtime-server:3000`; public service URLs still require HTTPS and redirects are rejected.
+
 ## Connect the Vercel frontend
 
 In the Vercel project, set this Production environment variable, then redeploy:

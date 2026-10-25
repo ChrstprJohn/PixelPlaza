@@ -8,6 +8,8 @@ The local prototype is playable: landing page, guest name/character picker, walk
 
 Requires Node.js 22.12+ (Node 24 recommended) and npm. From the repository root:
 
+Private realtime support is prepared but not yet deployed. After the VM listener is set up, local development will require an owner-opened SSH tunnel and `REALTIME_API_URL=http://127.0.0.1:4300`; follow [the pending tunnel workflow](documentation/LOCAL_DEVELOPMENT.md#ssh-tunnel-workflow-pending-vm-setup) before running live service/lobby checks. Unit tests do not require the tunnel. Existing ignored local env files have not been modified by this change.
+
 ```powershell
 npm install
 npm test
